@@ -153,7 +153,7 @@ class Distribution(object):
                 result.append(pkg)
             else:
                 fa.abort(u"provided package types must be Package instance or"
-                         u" string")
+                         u" string, but %s" % type(pkg))
         return result
 
     def get_package(self, pkg):
