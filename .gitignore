@@ -1,0 +1,13 @@
+*.bak
+*.egg
+*.egg-info
+*.orig
+*.pyc
+*.pyo
+.coverage
+.tox
+.ropeproject
+build
+dist
+tags
+htmlcov
