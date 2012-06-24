@@ -46,10 +46,10 @@ setup(name='alnair',
           'License :: OSI Approved :: BSD License',
           'Operating System :: POSIX :: Linux',
           'Programming Language :: Python :: 2',
-          'Topic :: Software Development :: Build Tools'
+          'Topic :: Software Development :: Build Tools',
           'Topic :: Software Development :: Libraries :: Python Modules',
           'Topic :: System :: Installation/Setup',
-          'Topic :: System :: Software Distribution'
+          'Topic :: System :: Software Distribution',
           'Topic :: System :: Systems Administration',
       ], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
       keywords='',
