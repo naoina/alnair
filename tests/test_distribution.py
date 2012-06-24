@@ -34,11 +34,10 @@ class TestDistribution(object):
         expected = os.path.abspath('recipes')
         assert alnair.Distribution.CONFIG_DIR == expected
 
-    @pytest.mark.parametrize(('pkgs', 'success'),
-        [(L, success) for L in itertools.combinations(['pkg1', 'pkg2', 'pkg3']
-            + [alnair.Package(x) for x in ['pkg1', 'pkg2', 'pkg3']], 3) for
-            success in (True, False)])
-    def test_install(self, pkgs, success):
+    @pytest.mark.parametrize(('pkgs',),
+        [(L,) for L in itertools.combinations(['pkg1', 'pkg2', 'pkg3']
+            + [alnair.Package(x) for x in ['pkg1', 'pkg2', 'pkg3']], 3)])
+    def test_install(self, pkgs):
         pkg, args = pkgs[0], pkgs[1:]
         mock_pkgs = [alnair.Package(p) for p in ['pkg1', 'pkg2', 'pkg3']]
         with contextlib.nested(
@@ -48,23 +47,19 @@ class TestDistribution(object):
                     get_install_command=mock.DEFAULT,
                     after_install=mock.DEFAULT)
                 ) as (mock_fa_sudo, mock_dist):
-            mock_fa_sudo.return_value.succeed = success
             mock_dist['get_packages'].return_value = mock_pkgs
             mock_dist['get_install_command'].return_value = \
                 'test_install_command'
             dist = alnair.Distribution('dummy')
-            assert dist.install(pkg, *args) == success
+            dist.install(pkg, *args)
         expected = [mock.call('test_install_command pkg1 pkg2 pkg3')]
         assert mock_fa_sudo.call_count == 1
         assert mock_fa_sudo.call_args_list == expected
-        assert mock_dist['after_install'].call_count == int(success)
+        assert mock_dist['after_install'].call_count == 1
 
-    @pytest.mark.parametrize(('success',), [
-        (True,), (False,)])
     @pytest.mark.randomize(('install_num', int), min_num=1, max_num=20,
             ncalls=1)
-    def test_install_with_multiple_call_within_context(self, success,
-            install_num):
+    def test_install_with_multiple_call_within_context(self, install_num):
         with contextlib.nested(
                 mock.patch('fabric.api.sudo'),
                 mock.patch.multiple('alnair.Distribution',
@@ -72,13 +67,12 @@ class TestDistribution(object):
                     get_install_command=mock.DEFAULT,
                     after_install=mock.DEFAULT)
                 ) as (mock_fa_sudo, mock_dist):
-            mock_fa_sudo.return_value.succeed = success
             mock_dist['get_packages'].return_value = [alnair.Package('pkg')]
             mock_dist['get_install_command'].return_value = \
                 'test_install_command'
             with alnair.Distribution('dummy') as dist:
                 for i in range(install_num):
-                    assert dist.install('pkg%d' % i) == success
+                    dist.install('pkg%d' % i)
             assert mock_dist['after_install'].call_count == 1
 
     @pytest.mark.randomize(('num', int), min_num=1, max_num=20, ncalls=1)

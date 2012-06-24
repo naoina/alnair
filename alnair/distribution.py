@@ -72,7 +72,6 @@ class Distribution(object):
             :class:`alnair.package.Package` or iterable of it
         :param *args: iterable of package name string or instance of
             :class:`alnair.package.Package`
-        :returns: True if install successful, otherwise False
         """
         args = list(args)
         if hasattr(pkgs, '__iter__'):
@@ -83,10 +82,9 @@ class Distribution(object):
         install_command = self.get_install_command(
                 kwargs.get('install_command'))
         pkgs = ' '.join(pkg.name for pkg in packages)
-        success = fa.sudo('%s %s' % (install_command, pkgs)).succeed
-        if success and not self._within_context:
+        fa.sudo('%s %s' % (install_command, pkgs))
+        if not self._within_context:
             self.after_install()
-        return success
 
     def after_install(self):
         for pkg in self._packages:
