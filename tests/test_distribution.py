@@ -75,8 +75,10 @@ class TestDistribution(object):
                     dist.install('pkg%d' % i)
             assert mock_dist['after_install'].call_count == 1
 
+    @pytest.mark.parametrize(('after',), [
+        (True,), (None,)])
     @pytest.mark.randomize(('num', int), min_num=1, max_num=20, ncalls=1)
-    def test_after_install(self, num):
+    def test_after_install(self, after, num):
         packages = []
         for i in range(num):
             pkg = mock.Mock()
@@ -84,6 +86,7 @@ class TestDistribution(object):
             config._contents = 'testcontents%d' % i
             config._cmd._commands = ['cmd%d' % i]
             pkg.setup.config_all = [('name%d' % i, config)]
+            pkg.setup.after = after
             packages.append(pkg)
         with contextlib.nested(
                 mock.patch.multiple('fabric.api', sudo=mock.DEFAULT,
@@ -94,10 +97,11 @@ class TestDistribution(object):
             dist = alnair.Distribution('dummy')
             dist._packages = packages
             dist.after_install()
-            assert mock_get_after_commands.call_count == 1
+            assert mock_get_after_commands.call_count == int(after or 0)
         expected = [mock.call('cmd%d' % x) for x in range(num)]
-        expected.append(mock.call('testcmd'))  # call by get_after_commands
-        assert mock_fa['sudo'].call_count == (num + 1)
+        if after:
+            expected.append(mock.call('testcmd'))  # call by get_after_commands
+        assert mock_fa['sudo'].call_count == (num + int(after or 0))
         assert mock_fa['sudo'].call_args_list == expected
         assert mock_fa['put'].call_count == num
 

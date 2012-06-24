@@ -94,8 +94,9 @@ class Distribution(object):
                 fa.put(sio, filename, use_sudo=True)
                 for cmd in config._cmd._commands:
                     fa.sudo(cmd)
-        for cmd in self.get_after_commands(setup.after):
-            fa.sudo(cmd)
+        if setup.after:
+            for cmd in self.get_after_commands(setup.after):
+                fa.sudo(cmd)
 
     def get_after_commands(self, after):
         """Get an command of after an install
@@ -109,7 +110,8 @@ class Distribution(object):
             return self.get_after_commands(after())
         else:
             fa.abort(u"`after` type must be instance of"
-                     u" `alnair.command.Command` or callable")
+                     u" `alnair.command.Command` or callable, but %s" %
+                     type(after))
 
     def get_install_command(self, default_install_command=None):
         """Get an install command
