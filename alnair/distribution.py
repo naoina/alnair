@@ -169,7 +169,6 @@ class Distribution(object):
                     % self.CONFIG_DIR)
         configfile = os.path.join(self.CONFIG_DIR, self.name,
                 '%s.py' % pkg)
-        print configfile
         if not os.path.isfile(configfile):
             raise NoSuchFileError(u"no such configuration file `%s`" %
                     configfile)
