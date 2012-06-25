@@ -91,7 +91,7 @@ class Distribution(object):
             setup = pkg.setup
             for cmd in setup._commands:
                 fa.sudo(cmd)
-            for filename, config in setup.config_all:
+            for filename, config in setup.config_all.iteritems():
                 sio = StringIO(config._contents.decode('utf-8'))
                 fa.put(sio, filename, use_sudo=True)
                 for cmd in config._commands:

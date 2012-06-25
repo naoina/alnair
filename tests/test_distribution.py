@@ -88,7 +88,7 @@ class TestDistribution(object):
             config._commands = ['confcmd%d' % i]
             setup._commands = ['setupcmd%d' % i]
             pkg.setup = setup
-            pkg.setup.config_all = [('name%d' % i, config)]
+            pkg.setup.config_all = {'name%d' % i: config}
             pkg.setup.after = after
             packages.append(pkg)
         with contextlib.nested(
