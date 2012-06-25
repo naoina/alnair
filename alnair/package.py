@@ -38,37 +38,14 @@ class Command(object):
         :param arg: last argument of command
         """
         self._commands = []
-        self._current = None
+        self._current_cmd = None
         self._arg = arg
 
     def __call__(self, *args, **kwargs):
         option = kwargs.get('option', '')
-        command = ' '.join(s for s in (self._current, option, ' '.join(args),
-            self._arg) if s).strip()
+        command = ' '.join(s for s in (self._current_cmd, option,
+            ' '.join(args), self._arg) if s).strip()
         self._commands.append(command)
-        return self
-
-    def __getattribute__(self, cmd):
-        try:
-            return object.__getattribute__(self, cmd)
-        except AttributeError:
-            object.__setattr__(self, '_current', cmd)
-            return self
-
-
-class Config(object):
-    def __init__(self, filename):
-        """Constructor of Config class
-
-        :param filename: filename of config file (e.g. '/etc/nginx/nginx.conf')
-        """
-        self._filename = filename
-        self._contents = None
-        self._cmd = Command(arg=filename)
-        self._current_cmd = None
-
-    def __call__(self, *args, **kwargs):
-        getattr(self._cmd, self._current_cmd)(*args, **kwargs)
         return self
 
     def __getattribute__(self, cmd):
@@ -77,6 +54,17 @@ class Config(object):
         except AttributeError:
             object.__setattr__(self, '_current_cmd', cmd)
             return self
+
+
+class Config(Command):
+    def __init__(self, filename):
+        """Constructor of Config class
+
+        :param filename: filename of config file (e.g. '/etc/nginx/nginx.conf')
+        """
+        super(Config, self).__init__(filename)
+        self._filename = filename
+        self._contents = None
 
     def contents(self, contents):
         """Set the contents of this config
@@ -88,10 +76,11 @@ class Config(object):
         return self
 
 
-class Setup(object):
+class Setup(Command):
     def __init__(self):
         """Constructor of Setup class
         """
+        super(Setup, self).__init__()
         self.after = None
         self._config = {}
 

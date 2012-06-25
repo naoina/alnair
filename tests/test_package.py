@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import mock
 import pytest
 
 import alnair
@@ -13,11 +12,11 @@ class TestCommand(object):
     def test_init(self, arg):
         cmd = alnair.Command(arg=arg)
         assert self.getattr(cmd, '_commands') == []
-        assert self.getattr(cmd, '_current') is None
+        assert self.getattr(cmd, '_current_cmd') is None
         assert self.getattr(cmd, '_arg') == arg
 
     @pytest.mark.parametrize(('attr', 'expected'), [
-        ('_commands', []), ('_current', None), ('_arg', '')])
+        ('_commands', []), ('_current_cmd', None), ('_arg', '')])
     def test_getattribute_attr_exists(self, attr, expected):
         cmd = alnair.Command()
         assert cmd.__getattribute__(attr) == expected
@@ -26,7 +25,7 @@ class TestCommand(object):
     def test_getattribute_attr_to_current(self, attr):
         cmd = alnair.Command()
         assert cmd.__getattribute__(attr) is cmd
-        assert self.getattr(cmd, '_current') == attr
+        assert self.getattr(cmd, '_current_cmd') == attr
 
     @pytest.mark.randomize(('attr', str), ncalls=5)
     def test_calls_with_single_attr(self, attr):
@@ -79,8 +78,6 @@ class TestConfig(object):
         config = alnair.package.Config(filename=filename)
         assert self.getattr(config, '_filename') == filename
         assert self.getattr(config, '_contents') is None
-        assert isinstance(self.getattr(config, '_cmd'), alnair.Command)
-        assert self.getattr(config, '_current_cmd') is None
 
     @pytest.mark.randomize(('contents', str), ncalls=5)
     def test_set_contents(self, contents):
@@ -99,13 +96,6 @@ class TestConfig(object):
         config = alnair.package.Config('dummy')
         assert config.__getattribute__(attr) is config
         assert self.getattr(config, '_current_cmd') == attr
-
-    @pytest.mark.randomize(('attr', str), ('arg', str), ncalls=5)
-    def test_calls(self, attr, arg):
-        config = alnair.package.Config('dummy')
-        with mock.patch.object(config, '_cmd') as mock_cmd:
-            config.__getattribute__(attr)(arg)
-            getattr(mock_cmd, attr).assert_called_with(arg)
 
 
 class TestSetup(object):

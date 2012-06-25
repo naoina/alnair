@@ -89,10 +89,12 @@ class Distribution(object):
     def after_install(self):
         for pkg in self._packages:
             setup = pkg.setup
+            for cmd in setup._commands:
+                fa.sudo(cmd)
             for filename, config in setup.config_all:
                 sio = StringIO(config._contents.decode('utf-8'))
                 fa.put(sio, filename, use_sudo=True)
-                for cmd in config._cmd._commands:
+                for cmd in config._commands:
                     fa.sudo(cmd)
         if setup.after:
             for cmd in self.get_after_commands(setup.after):

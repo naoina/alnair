@@ -76,15 +76,18 @@ class TestDistribution(object):
             assert mock_dist['after_install'].call_count == 1
 
     @pytest.mark.parametrize(('after',), [
-        (True,), (None,)])
+        (['testcmd'],), (None,)])
     @pytest.mark.randomize(('num', int), min_num=1, max_num=20, ncalls=1)
     def test_after_install(self, after, num):
         packages = []
         for i in range(num):
-            pkg = mock.Mock()
-            config = mock.Mock()
+            pkg = mock.Mock(spec=alnair.Package)
+            setup = mock.Mock(spec=alnair.package.Setup)
+            config = mock.Mock(spec=alnair.package.Config)
             config._contents = 'testcontents%d' % i
-            config._cmd._commands = ['cmd%d' % i]
+            config._commands = ['confcmd%d' % i]
+            setup._commands = ['setupcmd%d' % i]
+            pkg.setup = setup
             pkg.setup.config_all = [('name%d' % i, config)]
             pkg.setup.after = after
             packages.append(pkg)
@@ -92,16 +95,19 @@ class TestDistribution(object):
                 mock.patch.multiple('fabric.api', sudo=mock.DEFAULT,
                     put=mock.DEFAULT),
                 mock.patch('alnair.Distribution.get_after_commands',
-                    return_value=['testcmd'])
+                    return_value=after)
                 ) as (mock_fa, mock_get_after_commands):
             dist = alnair.Distribution('dummy')
             dist._packages = packages
             dist.after_install()
-            assert mock_get_after_commands.call_count == int(after or 0)
-        expected = [mock.call('cmd%d' % x) for x in range(num)]
+            call_count = 0 if after is None else len(after)
+            assert mock_get_after_commands.call_count == call_count
+        setup_calls = (mock.call('setupcmd%d' % x) for x in range(num))
+        conf_calls = (mock.call('confcmd%d' % x) for x in range(num))
+        expected = [x for y in zip(setup_calls, conf_calls) for x in y]
         if after:
             expected.append(mock.call('testcmd'))  # call by get_after_commands
-        assert mock_fa['sudo'].call_count == (num + int(after or 0))
+        assert mock_fa['sudo'].call_count == (num + num + call_count)
         assert mock_fa['sudo'].call_args_list == expected
         assert mock_fa['put'].call_count == num
 
