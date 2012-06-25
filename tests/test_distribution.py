@@ -100,13 +100,16 @@ class TestDistribution(object):
             dist = alnair.Distribution('dummy')
             dist._packages = packages
             dist.after_install()
-            call_count = 0 if after is None else len(after)
+            call_count = 0 if after is None else num
             assert mock_get_after_commands.call_count == call_count
         setup_calls = (mock.call('setupcmd%d' % x) for x in range(num))
         conf_calls = (mock.call('confcmd%d' % x) for x in range(num))
-        expected = [x for y in zip(setup_calls, conf_calls) for x in y]
+        after_calls = (mock.call('testcmd') for x in range(num))
         if after:
-            expected.append(mock.call('testcmd'))  # call by get_after_commands
+            expected = [x for y in zip(setup_calls, conf_calls, after_calls)
+                    for x in y]  # call by get_after_commands
+        else:
+            expected = [x for y in zip(setup_calls, conf_calls) for x in y]
         assert mock_fa['sudo'].call_count == (num + num + call_count)
         assert mock_fa['sudo'].call_args_list == expected
         assert mock_fa['put'].call_count == num

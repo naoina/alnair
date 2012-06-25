@@ -96,9 +96,9 @@ class Distribution(object):
                 fa.put(sio, filename, use_sudo=True)
                 for cmd in config._commands:
                     fa.sudo(cmd)
-        if setup.after:
-            for cmd in self.get_after_commands(setup.after):
-                fa.sudo(cmd)
+            if setup.after:
+                for cmd in self.get_after_commands(setup.after):
+                    fa.sudo(cmd)
 
     def get_after_commands(self, after):
         """Get an command of after an install
