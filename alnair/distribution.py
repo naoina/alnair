@@ -78,7 +78,8 @@ class Distribution(object):
             args.extend(pkgs)
         else:
             args.append(pkgs)
-        self._packages = packages = self.get_packages(args)
+        packages = self.get_packages(args)
+        self._packages.extend(packages)
         install_command = self.get_install_command(
                 kwargs.get('install_command'))
         pkgs = ' '.join(pkg.name for pkg in packages)

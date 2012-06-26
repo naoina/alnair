@@ -67,13 +67,16 @@ class TestDistribution(object):
                     get_install_command=mock.DEFAULT,
                     after_install=mock.DEFAULT)
                 ) as (mock_fa_sudo, mock_dist):
-            mock_dist['get_packages'].return_value = [alnair.Package('pkg')]
             mock_dist['get_install_command'].return_value = \
                 'test_install_command'
             with alnair.Distribution('dummy') as dist:
                 for i in range(install_num):
+                    mock_dist['get_packages'].return_value = \
+                        [alnair.Package('pkg%d' % i)]
                     dist.install('pkg%d' % i)
             assert mock_dist['after_install'].call_count == 1
+            assert [p.name for p in dist._packages] == \
+                    ['pkg%d' % x for x in range(install_num)]
 
     @pytest.mark.parametrize(('after',), [
         (['testcmd'],), (None,)])
