@@ -37,7 +37,7 @@ CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
 setup(name='alnair',
       version=version,
-      description="A simple system integration framework",
+      description="A simple system configuration framework",
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
           'Development Status :: 3 - Alpha',

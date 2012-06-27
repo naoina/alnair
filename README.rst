@@ -1,7 +1,7 @@
 Alnair
 ======
 
-Alnair is a simple system integration framework.
+Alnair is a simple system configuration framework.
 And also are intended to be used in conjunction with the Fabric (https://github.com/fabric/fabric).
 
 Requirement
