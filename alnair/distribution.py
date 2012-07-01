@@ -90,27 +90,34 @@ class Distribution(object):
     def after_install(self):
         for pkg in self._packages:
             setup = pkg.setup
-            for cmd in setup._commands:
-                fa.sudo(cmd)
+            self.exec_commands(setup)
             for filename, config in setup.config_all.iteritems():
                 sio = StringIO(config._contents.decode('utf-8'))
                 fa.put(sio, filename, use_sudo=True)
-                for cmd in config._commands:
-                    fa.sudo(cmd)
+                self.exec_commands(config)
             if setup.after:
-                for cmd in self.get_after_commands(setup.after):
-                    fa.sudo(cmd)
+                self.exec_commands(self.get_after_command(setup.after))
 
-    def get_after_commands(self, after):
+    def exec_commands(self, obj):
+        """Execute the commands actually
+
+        :param obj: instance of :class:`alnair.package.Command` or that
+            inherited it
+        """
+        for cmd, func in obj._commands:
+            func(cmd)
+
+    def get_after_command(self, after):
         """Get an command of after an install
 
         :param after: instance of :class:`alnair.command.Command` or callable
-        :returns: iterable of instance of :class:`alnair.command.Command`
+        :returns: instance of :class:`alnair.package.Command` or that inherited
+            it
         """
         if isinstance(after, Command):
-            return after._commands
+            return after
         elif callable(after):
-            return self.get_after_commands(after())
+            return self.get_after_command(after())
         else:
             fa.abort(u"`after` type must be instance of"
                      u" `alnair.command.Command` or callable, but %s" %

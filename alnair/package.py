@@ -30,6 +30,8 @@ __author__ = "Naoya Inada <naoina@kuune.org>"
 __all__ = [
 ]
 
+import fabric.api as fa
+
 
 class Command(object):
     def __init__(self, arg=''):
@@ -38,22 +40,28 @@ class Command(object):
         :param arg: last argument of command
         """
         self._commands = []
-        self._current_cmd = None
         self._arg = arg
 
-    def __call__(self, *args, **kwargs):
-        option = kwargs.get('option', '')
-        command = ' '.join(s for s in (self._current_cmd, option,
-            ' '.join(args), self._arg) if s).strip()
-        self._commands.append(command)
+    def run(self, cmd):
+        """Set a run command on the user privileges
+
+        :param cmd: string of command
+        :returns: self
+        """
+        self._commands.append(self._make_command(cmd, fa.run))
         return self
 
-    def __getattribute__(self, cmd):
-        try:
-            return object.__getattribute__(self, cmd)
-        except AttributeError:
-            object.__setattr__(self, '_current_cmd', cmd)
-            return self
+    def sudo(self, cmd):
+        """Set a run command on the super user privileges
+
+        :param cmd: string of command
+        :returns: self
+        """
+        self._commands.append(self._make_command(cmd, fa.sudo))
+        return self
+
+    def _make_command(self, cmd, func):
+        return (cmd, func)
 
 
 class Config(Command):

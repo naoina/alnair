@@ -79,64 +79,78 @@ class TestDistribution(object):
                     ['pkg%d' % x for x in range(install_num)]
 
     @pytest.mark.parametrize(('after',), [
-        (['testcmd'],), (None,)])
+        (mock.Mock(spec=alnair.Command),), (None,)])
     @pytest.mark.randomize(('num', int), min_num=1, max_num=20, ncalls=1)
     def test_after_install(self, after, num):
         packages = []
+        setup_calls = []
+        conf_calls = []
+        after_calls = []
         for i in range(num):
             pkg = mock.Mock(spec=alnair.Package)
             setup = mock.Mock(spec=alnair.package.Setup)
             config = mock.Mock(spec=alnair.package.Config)
+            func = mock.Mock()
             config._contents = 'testcontents%d' % i
-            config._commands = ['confcmd%d' % i]
-            setup._commands = ['setupcmd%d' % i]
+            config._commands = [('confcmd%d' % i, func)]
+            setup._commands = [('setupcmd%d' % i, func)]
             pkg.setup = setup
             pkg.setup.config_all = {'name%d' % i: config}
             pkg.setup.after = after
             packages.append(pkg)
+            setup_calls.append(mock.call(setup))
+            conf_calls.append(mock.call(config))
+            after_calls.append(mock.call(after))
         with contextlib.nested(
                 mock.patch.multiple('fabric.api', sudo=mock.DEFAULT,
                     put=mock.DEFAULT),
-                mock.patch('alnair.Distribution.get_after_commands',
-                    return_value=after)
-                ) as (mock_fa, mock_get_after_commands):
+                mock.patch('alnair.Distribution.get_after_command',
+                    return_value=after),
+                mock.patch('alnair.Distribution.exec_commands'),
+                ) as (mock_fa, mock_get_after_command, mock_exec_commands):
             dist = alnair.Distribution('dummy')
             dist._packages = packages
             dist.after_install()
             call_count = 0 if after is None else num
-            assert mock_get_after_commands.call_count == call_count
-        setup_calls = (mock.call('setupcmd%d' % x) for x in range(num))
-        conf_calls = (mock.call('confcmd%d' % x) for x in range(num))
-        after_calls = (mock.call('testcmd') for x in range(num))
+            assert mock_get_after_command.call_count == call_count
         if after:
             expected = [x for y in zip(setup_calls, conf_calls, after_calls)
-                    for x in y]  # call by get_after_commands
+                    for x in y]  # call by get_after_command
         else:
             expected = [x for y in zip(setup_calls, conf_calls) for x in y]
-        assert mock_fa['sudo'].call_count == (num + num + call_count)
-        assert mock_fa['sudo'].call_args_list == expected
+        assert mock_exec_commands.call_count == (num + num + call_count)
+        assert mock_exec_commands.call_args_list == expected
         assert mock_fa['put'].call_count == num
 
-    @pytest.mark.randomize(('cmdstr', str), ncalls=1)
-    def test_get_after_commands_with_command(self, cmdstr):
-        dist = alnair.Distribution('dummy')
-        cmd = getattr(alnair.Command(), cmdstr)()
-        assert dist.get_after_commands(cmd) == [cmdstr]
-
-    @pytest.mark.randomize(('cmdstr', str), ncalls=1)
-    def test_get_after_commands_with_callable(self, cmdstr):
+    @pytest.mark.randomize(('num', int), min_num=1, max_num=10)
+    def test_exec_commands(self, num):
         dist = alnair.Distribution('dummy')
         func = mock.Mock()
-        func.return_value = getattr(alnair.Command(), cmdstr)()
-        assert dist.get_after_commands(func) == [cmdstr]
+        cmd = mock.Mock(spec=alnair.Command)
+        cmd._commands = [('cmd%d' % i, func) for i in range(num)]
+        dist.exec_commands(cmd)
+        expected = [mock.call('cmd%d' % i) for i in range(num)]
+        assert func.call_args_list == expected
+
+    def test_get_after_command_with_command(self):
+        dist = alnair.Distribution('dummy')
+        cmd = alnair.Command()
+        assert dist.get_after_command(cmd) is cmd
+
+    def test_get_after_command_with_callable(self):
+        dist = alnair.Distribution('dummy')
+        cmd = alnair.Command()
+        func = mock.Mock()
+        func.return_value = cmd
+        assert dist.get_after_command(func) is cmd
         assert func.call_count == 1
 
     @pytest.mark.parametrize(('after',), [
         (1,), ('',), ([3],), ({4: '4'},)])
-    def test_get_after_commands_with_wrong_type(self, after):
+    def test_get_after_command_with_wrong_type(self, after):
         dist = alnair.Distribution('dummy')
         with pytest.raises(SystemExit) as exc_info:
-            dist.get_after_commands(after)
+            dist.get_after_command(after)
         assert getattr(exc_info.value, 'code', exc_info.value) == 1
 
     def test_get_install_command(self):

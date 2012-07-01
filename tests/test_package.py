@@ -4,98 +4,47 @@ import pytest
 
 import alnair
 
-class TestCommand(object):
-    def getattr(self, inst, attr):
-        return object.__getattribute__(inst, attr)
 
+class TestCommand(object):
     @pytest.mark.randomize(('arg', str), ncalls=5)
     def test_init(self, arg):
         cmd = alnair.Command(arg=arg)
-        assert self.getattr(cmd, '_commands') == []
-        assert self.getattr(cmd, '_current_cmd') is None
-        assert self.getattr(cmd, '_arg') == arg
+        assert cmd._commands == []
+        assert cmd._arg == arg
 
-    @pytest.mark.parametrize(('attr', 'expected'), [
-        ('_commands', []), ('_current_cmd', None), ('_arg', '')])
-    def test_getattribute_attr_exists(self, attr, expected):
+    @pytest.mark.randomize(('cmd', str), ncalls=5)
+    def test_runs(self, cmd):
+        import fabric.api as fa
         cmd = alnair.Command()
-        assert cmd.__getattribute__(attr) == expected
+        cmd.run(cmd)
+        assert cmd._commands == [(cmd, fa.run)]
 
-    @pytest.mark.randomize(('attr', str), ncalls=5)
-    def test_getattribute_attr_to_current(self, attr):
+        cmd.run(cmd)
+        assert cmd._commands == [(cmd, fa.run), (cmd, fa.run)]
+
+    @pytest.mark.randomize(('cmd', str), ncalls=5)
+    def test_sudos(self, cmd):
+        import fabric.api as fa
         cmd = alnair.Command()
-        assert cmd.__getattribute__(attr) is cmd
-        assert self.getattr(cmd, '_current_cmd') == attr
+        cmd.sudo(cmd)
+        assert cmd._commands == [(cmd, fa.sudo)]
 
-    @pytest.mark.randomize(('attr', str), ncalls=5)
-    def test_calls_with_single_attr(self, attr):
-        cmd = alnair.Command()
-        assert cmd.__getattribute__(attr)() is cmd
-        assert self.getattr(cmd, '_commands') == [attr]
-
-    @pytest.mark.randomize(('attr1', str), ('attr2', str), ncalls=5)
-    def test_calls_with_multiple_attr(self, attr1, attr2):
-        cmd = alnair.Command()
-        assert cmd.__getattribute__(attr1)().__getattribute__(attr2)() is cmd
-        assert self.getattr(cmd, '_commands') == [attr1, attr2]
-
-    @pytest.mark.randomize(('attr', str), ('args', str), fixed_length=8,
-            ncalls=5)
-    def test_calls_with_args(self, attr, args):
-        cmd = alnair.Command()
-        assert cmd.__getattribute__(attr)(*args) is cmd
-        assert self.getattr(cmd, '_commands') == ['%s %s' % (attr, ' '.join(args))]
-
-    @pytest.mark.randomize(('attr', str), ('arg', str), fixed_length=8,
-            ncalls=5)
-    def test_calls_with_default_arg(self, attr, arg):
-        cmd = alnair.Command(arg)
-        assert cmd.__getattribute__(attr)() is cmd
-        assert self.getattr(cmd, '_commands') == ['%s %s' % (attr, arg)]
-
-    @pytest.mark.randomize(('attr', str), ('option', str), fixed_length=8,
-            ncalls=5)
-    def test_calls_with_option(self, attr, option):
-        cmd = alnair.Command()
-        assert cmd.__getattribute__(attr)(option=option) is cmd
-        assert self.getattr(cmd, '_commands') == ['%s %s' % (attr, option)]
-
-    @pytest.mark.randomize(('attr', str), ('arg', str), ('args', str),
-            ('option', str), fixed_length=8, ncalls=5)
-    def test_calls_with_all(self, attr, arg, args, option):
-        cmd = alnair.Command(arg)
-        assert cmd.__getattribute__(attr)(*args, option=option) is cmd
-        assert self.getattr(cmd, '_commands') == \
-                ['%s %s %s %s' % (attr, option, ' '.join(args), arg)]
+        cmd.sudo(cmd)
+        assert cmd._commands == [(cmd, fa.sudo), (cmd, fa.sudo)]
 
 
 class TestConfig(object):
-    def getattr(self, inst, attr):
-        return object.__getattribute__(inst, attr)
-
     @pytest.mark.randomize(('filename', str), ncalls=5)
     def test_init(self, filename):
         config = alnair.package.Config(filename=filename)
-        assert self.getattr(config, '_filename') == filename
-        assert self.getattr(config, '_contents') is None
+        assert config._filename == filename
+        assert config._contents is None
 
     @pytest.mark.randomize(('contents', str), ncalls=5)
     def test_set_contents(self, contents):
         config = alnair.package.Config('dummy')
         assert config.contents(contents) is config
-        assert self.getattr(config, '_contents') == contents
-
-    @pytest.mark.parametrize(('attr', 'expected'), [
-        ('_filename', 'dummy'), ('_contents', None), ('_current_cmd', None)])
-    def test_getattribute_attr_exists(self, attr, expected):
-        config = alnair.package.Config('dummy')
-        assert config.__getattribute__(attr) == expected
-
-    @pytest.mark.randomize(('attr', str), ncalls=5)
-    def test_getattribute_attr_to_current(self, attr):
-        config = alnair.package.Config('dummy')
-        assert config.__getattribute__(attr) is config
-        assert self.getattr(config, '_current_cmd') == attr
+        assert config._contents == contents
 
 
 class TestSetup(object):
