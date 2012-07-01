@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.2
+---
+
+- Change the APIs (An incompatible with older releases)
+
 0.1.2
 -----
 
