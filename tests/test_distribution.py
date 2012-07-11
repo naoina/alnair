@@ -216,6 +216,19 @@ class TestDistribution(object):
             assert all([x.name == (getattr(y, 'name', y)) for x, y in
                 zip(result, pkgs)])
 
+    @pytest.mark.parametrize(('pkgs',),
+        [(L,) for L in itertools.combinations(['pkg1', 'pkg2', 'pkg3'] +
+            [alnair.Package(x) for x in ['pkg1', 'pkg2', 'pkg3']], 3)])
+    def test_get_packages_with_additional_args(self, pkgs):
+        with mock.patch('alnair.Distribution.get_package') as mock_get_package:
+            mock_get_package.side_effect = alnair.Package
+            dist = alnair.Distribution('dummy')
+            pkg, additionals = pkgs[0], pkgs[1:]
+            result = dist.get_packages(pkg, *additionals)
+            assert len(result) == len(pkgs)
+            assert sorted(x.name for x in result) == \
+                    sorted(x if isinstance(x, str) else x.name for x in pkgs)
+
     @pytest.mark.parametrize(('exc',), [
         (alnair.NoSuchDirectoryError,), (alnair.NoSuchFileError,),
         (alnair.UndefinedPackageError,), (TypeError,),

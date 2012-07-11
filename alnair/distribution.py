@@ -69,16 +69,12 @@ class Distribution(object):
         change.
 
         :param pkgs: package name string or instance of
-            :class:`alnair.package.Package` or iterable of it
+            :class:`alnair.package.Package` or iterable of it.
+            see also :meth:`get_packages`
         :param *args: iterable of package name string or instance of
-            :class:`alnair.package.Package`
+            :class:`alnair.package.Package` . see also :meth:`get_packages`
         """
-        args = list(args)
-        if hasattr(pkgs, '__iter__'):
-            args.extend(pkgs)
-        else:
-            args.append(pkgs)
-        packages = self.get_packages(args)
+        packages = self.get_packages(pkgs, *args)
         self._packages.extend(packages)
         install_command = self.get_install_command(
                 kwargs.get('install_command'))
@@ -139,7 +135,7 @@ class Distribution(object):
                 fa.abort(u"`install_command` is not provided")
         return install_command
 
-    def get_packages(self, packages):
+    def get_packages(self, packages, *args):
         """Get a packages
 
         All package name string in packages, normalize to an instance of
@@ -149,10 +145,17 @@ class Distribution(object):
 
         :param packages: iterable object of instance of
             :class:`alnair.package.Package` or string of package name
+        :param *args: iterable of package name string or instance of
+            :class:`alnair.package.Package`
         :returns: list of instance of :class:`alnair.package.Package`
         """
+        args = list(args)
+        if hasattr(packages, '__iter__'):
+            args.extend(packages)
+        else:
+            args.append(packages)
         result = []
-        for pkg in packages:
+        for pkg in args:
             if isinstance(pkg, basestring):
                 try:
                     result.append(self.get_package(pkg))
