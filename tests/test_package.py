@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os
+
 import pytest
 
 import alnair
@@ -85,7 +87,13 @@ class TestSetup(object):
 
 class TestPackage(object):
     @pytest.mark.randomize(('name', str), ncalls=5)
-    def test_init(self, name):
+    def test_init_with_name(self, name):
         package = alnair.Package(name)
         assert package.name == name
+        assert isinstance(package.setup, alnair.package.Setup)
+
+    def test_init_with_default(self):
+        package = alnair.Package()
+        expected = os.path.splitext(os.path.basename(__file__))[0]
+        assert package.name == expected
         assert isinstance(package.setup, alnair.package.Setup)

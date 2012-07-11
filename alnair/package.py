@@ -30,6 +30,9 @@ __author__ = "Naoya Inada <naoina@kuune.org>"
 __all__ = [
 ]
 
+import inspect
+import os
+
 import fabric.api as fa
 
 
@@ -114,10 +117,15 @@ class Setup(Command):
 
 
 class Package(object):
-    def __init__(self, name):
+    def __init__(self, name=None):
         """Constructor of Package class
 
-        :param name: name of package (e.g. 'nginx')
+        :param name: name of package (e.g. 'nginx'). If not given or None,
+            name is takes from filename (e.g. If filename is 'foo.py', name is
+            'foo').
         """
+        if name is None:
+            filename = inspect.currentframe().f_back.f_code.co_filename
+            name = os.path.splitext(os.path.basename(filename))[0]
         self.name = name
         self.setup = Setup()
