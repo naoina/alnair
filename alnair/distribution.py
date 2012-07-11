@@ -83,14 +83,30 @@ class Distribution(object):
         if not self._within_context:
             self.after_install()
 
+    def config(self, pkgs, *args):
+        """Config files of packages put on to a remote server
+
+        :param pkgs: package name string or instance of
+            :class:`alnair.package.Package` or iterable of it.
+            see also :meth:`get_packages`
+        :param *args: iterable of package name string or instance of
+            :class:`alnair.package.Package` . see also :meth:`get_packages`
+        """
+        packages = self.get_packages(pkgs, *args)
+        for pkg in packages:
+            self._exec_configs(pkg.setup)
+
+    def _exec_configs(self, setup):
+        for filename, config in setup.config_all.iteritems():
+            sio = StringIO(config._contents.decode('utf-8'))
+            fa.put(sio, filename, use_sudo=True)
+            self.exec_commands(config)
+
     def after_install(self):
         for pkg in self._packages:
             setup = pkg.setup
             self.exec_commands(setup)
-            for filename, config in setup.config_all.iteritems():
-                sio = StringIO(config._contents.decode('utf-8'))
-                fa.put(sio, filename, use_sudo=True)
-                self.exec_commands(config)
+            self._exec_configs(setup)
             if setup.after:
                 self.exec_commands(self.get_after_command(setup.after))
 

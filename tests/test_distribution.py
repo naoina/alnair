@@ -9,6 +9,8 @@ import pytest
 
 import alnair
 
+from io import StringIO
+
 class TestDistribution(object):
     TEST_FIXTURE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),
         'fixtures'))
@@ -77,6 +79,72 @@ class TestDistribution(object):
             assert mock_dist['after_install'].call_count == 1
             assert [p.name for p in dist._packages] == \
                     ['pkg%d' % x for x in range(install_num)]
+
+    @pytest.mark.parametrize(('pkgnames', 'confnames', 'testdata'),
+        # [([],), (['pkg1'], ['test_conffile1'], ['testdata1']),
+        #   (['pkg1', 'pkg2'], ['test_conffile1', 'test_conffile2'],
+        #       ['testdata1', 'testdata2']),
+        #   (['pkg1', 'pkg2', 'pkg3'],
+        #       ['test_conffile1', 'test_conffile2', 'test_conffile3'],
+        #       ['testdata1', 'testdata2', 'testdata3'])]
+        [(['pkg%d' % x for x in range(1, y)],
+            ['test_conffile%d' % x for x in range(1, y)],
+            ['testdata%d' % x for x in range(1, y)]) for y in range(1, 5)])
+    def test_config_with_str(self, pkgnames, confnames, testdata):
+        with mock.patch('fabric.api.put') as mock_put:
+            dist = alnair.Distribution(self.TEST_DISTRIBUTION)
+            dist.CONFIG_DIR = self.TEST_FIXTURE_DIR
+            dist.config(pkgnames)
+            assert mock_put.call_count == len(pkgnames)
+            for arg, c, d in zip(mock_put.call_args_list, confnames, testdata):
+                sio = arg[0][0]
+                assert isinstance(sio, StringIO)
+                assert arg[0][1] == c
+                assert sio.read() == d
+
+    @pytest.mark.parametrize(('pkgs', 'confnames', 'testdata'),
+        # [([],), ([pkg1], ['test_conffile1'], ['testdata1']),
+        #   ([pkg1, pkg2], ['test_conffile1', 'test_conffile2'],
+        #       ['testdata1', 'testdata2']),
+        #   ([pkg1, pkg2, pkg3],
+        #       ['test_conffile1', 'test_conffile2', 'test_conffile3'],
+        #       ['testdata1', 'testdata2', 'testdata3'])]
+        [([alnair.Package('pkg%d' % x) for x in range(1, y)],
+            ['test_conffile%d' % x for x in range(1, y)],
+            ['testdata%d' % x for x in range(1, y)]) for y in range(1, 5)])
+    def test_config_with_package(self, pkgs, confnames, testdata):
+        for p, c, t in zip(pkgs, confnames, testdata):
+            p.setup.config(c).contents(t)
+        with mock.patch('fabric.api.put') as mock_put:
+            dist = alnair.Distribution('dummy')
+            dist.config(pkgs)
+            assert mock_put.call_count == len(pkgs)
+            for arg, c, d in zip(mock_put.call_args_list, confnames, testdata):
+                sio = arg[0][0]
+                assert isinstance(sio, StringIO)
+                assert arg[0][1] == c
+                assert sio.read() == d
+
+    @pytest.mark.parametrize(('pkgs', 'confnames', 'testdata'),
+        [(['pkg%d' % x for x in range(1, y)] +
+                [alnair.Package('pkg%d' % x) for x in range(1, y)],
+            ['test_conffile%d' % x for x in range(1, y)],
+            ['testdata%d' % x for x in range(1, y)]) for y in range(1, 5)])
+    def test_config_with_mixed(self, pkgs, confnames, testdata):
+        for p, c, t in zip([x for x in pkgs if isinstance(x, alnair.Package)],
+                confnames, testdata):
+            if isinstance(p, alnair.Package):
+                p.setup.config(c).contents(t)
+        with mock.patch('fabric.api.put') as mock_put:
+            dist = alnair.Distribution(self.TEST_DISTRIBUTION)
+            dist.CONFIG_DIR = self.TEST_FIXTURE_DIR
+            dist.config(pkgs)
+            assert mock_put.call_count == len(pkgs)
+            for arg, c, d in zip(mock_put.call_args_list, confnames, testdata):
+                sio = arg[0][0]
+                assert isinstance(sio, StringIO)
+                assert arg[0][1] == c
+                assert sio.read() == d
 
     @pytest.mark.parametrize(('after',), [
         (mock.Mock(spec=alnair.Command),), (None,)])
