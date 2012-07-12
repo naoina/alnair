@@ -26,6 +26,7 @@
 
 
 __author__ = "Naoya Inada <naoina@kuune.org>"
+__version__ = '0.2'
 
 
 from alnair.package import (
