@@ -16,6 +16,9 @@ class TestDistribution(object):
         'fixtures'))
     TEST_DISTRIBUTION = 'testdist'
 
+    def setup_method(self, method):
+        reload(alnair)  # reset `alnair.setup` global variable
+
     @pytest.mark.randomize(('name', str), ncalls=5)
     def test_init(self, name):
         dist = alnair.Distribution(name)
@@ -146,6 +149,17 @@ class TestDistribution(object):
                 assert arg[0][1] == c
                 assert sio.read() == d
 
+    def test_config_with_global_setup_config(self):
+        with mock.patch('fabric.api.put') as mock_put:
+            dist = alnair.Distribution('dummy')
+            alnair.setup.config('testconfig').contents("testdata")
+            dist.config([])
+            assert mock_put.call_count == 1
+            sio = mock_put.call_args[0][0]
+            assert isinstance(sio, StringIO)
+            assert mock_put.call_args[0][1] == 'testconfig'
+            assert sio.read() == "testdata"
+
     @pytest.mark.parametrize(('after',), [
         (mock.Mock(spec=alnair.Command),), (None,)])
     @pytest.mark.randomize(('num', int), min_num=1, max_num=20, ncalls=1)
@@ -189,6 +203,24 @@ class TestDistribution(object):
         assert mock_exec_commands.call_count == (num + num + call_count)
         assert mock_exec_commands.call_args_list == expected
         assert mock_fa['put'].call_count == num
+
+    def test_after_install_with_global_setup(self):
+        with mock.patch('fabric.api.put') as mock_put:
+            dist = alnair.Distribution('dummy')
+            dist._packages = []
+            alnair.setup.config('testconfig').contents("testdata")
+            cmd = alnair.Command()
+            mock_func = mock.Mock()
+            cmd._commands = [('testcmd', mock_func)]
+            alnair.setup.after = cmd
+            dist.after_install()
+            mock_put.call_count == 1
+            sio = mock_put.call_args[0][0]
+            assert isinstance(sio, StringIO)
+            assert mock_put.call_args[0][1] == 'testconfig'
+            assert sio.read() == "testdata"
+            assert mock_func.call_count == 1
+            assert mock_func.call_args_list == [mock.call('testcmd')]
 
     @pytest.mark.randomize(('num', int), min_num=1, max_num=10)
     def test_exec_commands(self, num):

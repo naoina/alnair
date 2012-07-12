@@ -28,10 +28,16 @@
 __author__ = "Naoya Inada <naoina@kuune.org>"
 
 
-from alnair.package import Package, Command; Package; Command  # pyflakes
+from alnair.package import (
+    Package,
+    Setup,
+    Command,
+    ); Package; Setup; Command  # pyflakes
 from alnair.distribution import Distribution; Distribution  # pyflakes
 from alnair.exception import (
     NoSuchDirectoryError,
     NoSuchFileError,
     UndefinedPackageError,
     ); NoSuchDirectoryError; NoSuchFileError; UndefinedPackageError  # pyflakes
+
+setup = Setup()  # for system wide settings

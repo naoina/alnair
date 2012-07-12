@@ -37,6 +37,8 @@ from io import StringIO
 
 import fabric.api as fa
 
+import alnair
+
 from alnair.exception import (
     NoSuchDirectoryError,
     NoSuchFileError,
@@ -93,6 +95,7 @@ class Distribution(object):
             :class:`alnair.package.Package` . see also :meth:`get_packages`
         """
         packages = self.get_packages(pkgs, *args)
+        self._exec_configs(alnair.setup)
         for pkg in packages:
             self._exec_configs(pkg.setup)
 
@@ -103,12 +106,15 @@ class Distribution(object):
             self.exec_commands(config)
 
     def after_install(self):
+        self._exec_configs(alnair.setup)
         for pkg in self._packages:
             setup = pkg.setup
             self.exec_commands(setup)
             self._exec_configs(setup)
             if setup.after:
                 self.exec_commands(self.get_after_command(setup.after))
+        if alnair.setup.after:
+            self.exec_commands(self.get_after_command(alnair.setup.after))
 
     def exec_commands(self, obj):
         """Execute the commands actually
