@@ -39,3 +39,47 @@ def test_generate_template(tmpdir, distname):
     assert tmpdir.join('recipes').join(distname).check()
     assert actual == expected
     tmpdir.remove()
+
+
+@pytest.mark.randomize(('package', str), ncalls=5)
+def test_generate_recipe_with_missing_distdir(tmpdir, package):
+    sys.argv = ['alnair', 'generate', 'recipe', package]
+    from alnair import command
+    command.generate.RECIPES_DIR = str(tmpdir)
+    with pytest.raises(SystemExit):
+        command.main()
+    tmpdir.remove()
+
+
+@pytest.mark.randomize(('package', str), ncalls=5)
+def test_generate_recipe_with_single_dist(tmpdir, package):
+    sys.argv = ['alnair', 'generate', 'recipe', package]
+    tmpdir.mkdir('dist')
+    from alnair import command
+    command.generate.RECIPES_DIR = str(tmpdir)
+    command.main()
+    with open(str(tmpdir.join('dist', '%s.py' % package))) as f:
+        actual = f.read()
+    with open(os.path.join(templates_dir, 'recipe.py.template')) as f:
+        expected = f.read() % dict(package=package)
+    assert actual == expected
+    tmpdir.remove()
+
+
+@pytest.mark.randomize(('package', str), ('dists', [str, str]), fixed_length=8,
+        ncalls=5)
+def test_generate_recipe_with_multiple_dist(tmpdir, package, dists):
+    sys.argv = ['alnair', 'generate', 'recipe', package]
+    for d in dists:
+        tmpdir.mkdir(d)
+    from alnair import command
+    command.generate.RECIPES_DIR = str(tmpdir)
+    command.main()
+    for d in dists:
+        assert tmpdir.join(d, '%s.py' % package).check()
+        with open(str(tmpdir.join(d, '%s.py' % package))) as f:
+            actual = f.read()
+        with open(os.path.join(templates_dir, 'recipe.py.template')) as f:
+            expected = f.read() % dict(package=package)
+        assert actual == expected
+    tmpdir.remove()

@@ -1,0 +1,22 @@
+# -*- coding: utf-8 -*-
+
+from alnair import Package, Command
+
+# If actual package name is different to "%(package)s",
+# Package('actual package name') instead.
+%(package)s = Package()
+
+# Optional, please uncomment(remove leading '#') following lines and modify if
+# necessary for package specific settings.
+#
+#%(package)s.setup.config('some config file path').contents("""\
+#some config contents
+#""")
+
+
+# Optional, please uncomment(remove leading '#') following lines and modify if
+# necessary for package specific setup command run after the installed.
+#
+#%(package)s.setup.after = Command(). \
+#    run('something shell command'). \
+#    sudo('shell command run under the root')

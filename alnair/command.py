@@ -29,10 +29,17 @@ __author__ = "Naoya Inada <naoina@kuune.org>"
 
 import argparse
 import os
+import sys
 
 from contextlib import nested
+from glob import glob
 
 from alnair import __version__
+
+
+def fail(msg):
+    sys.stderr.write('alnair: error: %s\n' % msg)
+    sys.exit(1)
 
 
 def create_from_template(filename, outputpath, **kwargs):
@@ -97,6 +104,29 @@ class generate(subcommand):
             outputpath = os.path.join(path, 'common.py')
             create_from_template('common.py', outputpath=outputpath,
                     distname=distname)
+
+    @subcommand.define
+    class recipe(object):
+        """generate recipe template"""
+
+        args = [
+            dict(
+                dest='package',
+                metavar='PACKAGE',
+                help=u"name of a package",
+                ),
+            ]
+
+        def execute(self, package):
+            distdirs = [d for d in glob(os.path.join(generate.RECIPES_DIR, '*')) if os.path.isdir(d)]
+            if not distdirs:
+                fail(
+                    u"recipes directory is not exists\n"
+                    u"please run `alnair generate template [DISTNAME]` first.")
+            for distdir in distdirs:
+                outputpath = os.path.join(distdir, '%s.py' % package)
+                create_from_template('recipe.py', outputpath=outputpath,
+                        package=package)
 
 
 def main():
