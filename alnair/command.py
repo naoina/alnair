@@ -59,8 +59,8 @@ class subcommand(object):
             if hasattr(val, '_subcommand'):
                 parser_subcommand = subparser.add_parser(name,
                         help=val.__doc__)
-                for argdict in val.args:
-                    parser_subcommand.add_argument(**argdict)
+                for args, kwargs in val.args:
+                    parser_subcommand.add_argument(*args, **kwargs)
                 parser_subcommand.set_defaults(command=val().execute)
         if hasattr(cls, 'alias'):
             subparsers.add_parser(cls.alias, parents=[parser], add_help=False)
@@ -82,19 +82,17 @@ class generate(subcommand):
         """generate new template set"""
 
         args = [
-            dict(
-                dest='distname',
+            (['distname'], dict(
                 metavar='DISTNAME',
                 help=u"name of the distribution (e.g. archlinux)",
-                ),
-            dict(
-                dest='directory',
+                )),
+            (['directory'], dict(
                 metavar='DIRECTORY',
                 default='.',
                 nargs='?',
                 help=u"directory in which the recipes file layout will be"
                      u" generated (default: %(default)s)",
-                ),
+                )),
             ]
 
         def execute(self, distname, directory):
@@ -110,11 +108,10 @@ class generate(subcommand):
         """generate recipe template"""
 
         args = [
-            dict(
-                dest='package',
+            (['package'], dict(
                 metavar='PACKAGE',
                 help=u"name of a package",
-                ),
+                )),
             ]
 
         def execute(self, package):
