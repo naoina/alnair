@@ -18,8 +18,7 @@ class pytest(TestCommand):
         import pytest
         raise SystemExit(pytest.main(self.test_args))
 
-from alnair import __version__
-version = __version__
+version = '0.2'
 
 install_requires = [
     'fabric>=1.4.2',
