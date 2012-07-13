@@ -18,7 +18,8 @@ def test_create_from_template(tmpdir, filename):
 
     # test
     from alnair.command import create_from_template
-    create_from_template(filename, str(tmpdir), distname='testdistname')
+    create_from_template(filename, str(tmpdir.join(filename)),
+            distname='testdistname')
     origpath = os.path.join(templates_dir, '%s.template' % filename)
     expected = open(origpath).read() % dict(distname='testdistname')
     assert open(str(tmpdir.join(filename))).read() == expected

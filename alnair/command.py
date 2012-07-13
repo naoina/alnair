@@ -35,10 +35,9 @@ from contextlib import nested
 from alnair import __version__
 
 
-def create_from_template(filename, outputdir, **kwargs):
+def create_from_template(filename, outputpath, **kwargs):
     templatedir = os.path.join(os.path.dirname(__file__), 'templates')
     fpath = os.path.join(templatedir, '%s.template' % filename)
-    outputpath = os.path.join(outputdir, filename)
     print u"creating file: %s" % outputpath
     with nested(open(fpath), open(outputpath, 'w')) as (rf, wf):
         wf.write(rf.read() % kwargs)
@@ -95,7 +94,8 @@ class generate(subcommand):
             path = os.path.join(directory, generate.RECIPES_DIR, distname)
             print u"creating directory: %s" % path
             os.makedirs(path, mode=0o755)
-            create_from_template('common.py', outputdir=path,
+            outputpath = os.path.join(path, 'common.py')
+            create_from_template('common.py', outputpath=outputpath,
                     distname=distname)
 
 
