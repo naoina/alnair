@@ -108,9 +108,10 @@ class generate(subcommand):
         """generate recipe template"""
 
         args = [
-            (['package'], dict(
+            (['packages'], dict(
                 metavar='PACKAGE',
-                help=u"name of a package",
+                nargs='+',
+                help=u"name of a package(s)",
                 )),
             (['-f', '--force'], dict(
                 dest='force',
@@ -119,19 +120,20 @@ class generate(subcommand):
                 )),
             ]
 
-        def execute(self, package, force):
+        def execute(self, packages, force):
             distdirs = [d for d in glob(os.path.join(generate.RECIPES_DIR, '*')) if os.path.isdir(d)]
             if not distdirs:
                 fail(
                     u"recipes directory is not exists\n"
                     u"please run `alnair generate template [DISTNAME]` first.")
             for distdir in distdirs:
-                outputpath = os.path.join(distdir, '%s.py' % package)
-                if os.path.isfile(outputpath) and force is False:
-                    print u'file "%s" is exists, skipped' % outputpath
-                    continue
-                create_from_template('recipe.py', outputpath=outputpath,
-                        package=package)
+                for package in packages:
+                    outputpath = os.path.join(distdir, '%s.py' % package)
+                    if os.path.isfile(outputpath) and force is False:
+                        print u'file "%s" is exists, skipped' % outputpath
+                        continue
+                    create_from_template('recipe.py', outputpath=outputpath,
+                            package=package)
 
 
 def main():

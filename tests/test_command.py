@@ -114,3 +114,19 @@ def test_generate_recipe_with_overwrite_if_file_exists(tmpdir, package, opt):
         expected = f.read() % dict(package=package)
     assert actual == expected
     tmpdir.remove()
+
+
+@pytest.mark.randomize(('packages', [str, str]), ncalls=5)
+def test_generate_recipe_with_multiple_packages(tmpdir, packages):
+    sys.argv = ['alnair', 'generate', 'recipe'] + packages
+    tmpdir.mkdir('dist')
+    from alnair import command
+    command.generate.RECIPES_DIR = str(tmpdir)
+    command.main()
+    for package in packages:
+        with open(str(tmpdir.join('dist', '%s.py' % package))) as f:
+            actual = f.read()
+        with open(os.path.join(templates_dir, 'recipe.py.template')) as f:
+            expected = f.read() % dict(package=package)
+        assert actual == expected
+    tmpdir.remove()
