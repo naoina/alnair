@@ -83,3 +83,34 @@ def test_generate_recipe_with_multiple_dist(tmpdir, package, dists):
             expected = f.read() % dict(package=package)
         assert actual == expected
     tmpdir.remove()
+
+
+@pytest.mark.randomize(('package', str), fixed_length=8, ncalls=5)
+def test_generate_recipe_with_skip_if_file_exists(tmpdir, package):
+    sys.argv = ['alnair', 'generate', 'recipe', package]
+    tmpdir.mkdir('dist').join('%s.py' % package).write('testdata')
+    from alnair import command
+    command.generate.RECIPES_DIR = str(tmpdir)
+    command.main()
+    with open(str(tmpdir.join('dist', '%s.py' % package))) as f:
+        actual = f.read()
+    assert actual == 'testdata'
+    tmpdir.remove()
+
+
+@pytest.mark.parametrize(('opt',), [
+    ('-f',), ('--force',),
+    ])
+@pytest.mark.randomize(('package', str), fixed_length=8, ncalls=5)
+def test_generate_recipe_with_overwrite_if_file_exists(tmpdir, package, opt):
+    sys.argv = ['alnair', 'generate', 'recipe', opt, package]
+    tmpdir.mkdir('dist').join('%s.py' % package).write('testdata')
+    from alnair import command
+    command.generate.RECIPES_DIR = str(tmpdir)
+    command.main()
+    with open(str(tmpdir.join('dist', '%s.py' % package))) as f:
+        actual = f.read()
+    with open(os.path.join(templates_dir, 'recipe.py.template')) as f:
+        expected = f.read() % dict(package=package)
+    assert actual == expected
+    tmpdir.remove()

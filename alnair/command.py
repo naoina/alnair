@@ -112,9 +112,14 @@ class generate(subcommand):
                 metavar='PACKAGE',
                 help=u"name of a package",
                 )),
+            (['-f', '--force'], dict(
+                dest='force',
+                action='store_true',
+                help=u"overwrite an existent files",
+                )),
             ]
 
-        def execute(self, package):
+        def execute(self, package, force):
             distdirs = [d for d in glob(os.path.join(generate.RECIPES_DIR, '*')) if os.path.isdir(d)]
             if not distdirs:
                 fail(
@@ -122,6 +127,9 @@ class generate(subcommand):
                     u"please run `alnair generate template [DISTNAME]` first.")
             for distdir in distdirs:
                 outputpath = os.path.join(distdir, '%s.py' % package)
+                if os.path.isfile(outputpath) and force is False:
+                    print u'file "%s" is exists, skipped' % outputpath
+                    continue
                 create_from_template('recipe.py', outputpath=outputpath,
                         package=package)
 
