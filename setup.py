@@ -1,4 +1,5 @@
 import os
+import sys
 
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
@@ -23,6 +24,8 @@ version = '0.2'
 install_requires = [
     'fabric>=1.4.2',
     ]
+if sys.version_info < (2, 7):
+    install_requires.append('argparse')
 
 tests_require = [
     'mock',
@@ -64,6 +67,8 @@ setup(name='alnair',
       tests_require=tests_require,
       entry_points="""
       # -*- Entry points: -*-
+      [console_scripts]
+      alnair = alnair.command:main
       """,
       cmdclass = {'test': pytest},
       )

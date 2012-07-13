@@ -1,0 +1,13 @@
+# -*- coding: utf-8 -*-
+
+from alnair import setup
+
+# Please define the install command of %(distname)s
+# e.g. 'apt-get install' if Debian or Ubuntu
+install_command = 'some install command'
+
+# Optional, please uncomment(remove leading '#') following lines and modify if
+# necessary for system wide settings.
+#setup.config("some config file path").contents("""\
+#some config contents
+#""")

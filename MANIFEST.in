@@ -1,1 +1,2 @@
 include *.cfg *.rst
+recursive-include alnair *.template
