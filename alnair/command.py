@@ -137,7 +137,7 @@ class generate(subcommand):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=u"aaa")
+    parser = argparse.ArgumentParser(description=u"alnair command-line interface.")
     parser.add_argument('--version', action='version',
             version='%(prog)s ' + __version__)
     subparsers = parser.add_subparsers(title=u"commands")
