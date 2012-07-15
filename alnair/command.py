@@ -80,6 +80,7 @@ class subcommand(object):
         return klass
 
 
+@subcommand.define
 class generate(subcommand):
     """generate the recipes template (alias "g")"""
 
@@ -147,6 +148,7 @@ class generate(subcommand):
                             package=package)
 
 
+@subcommand.define
 class setup(subcommand):
     """install and setup package(s) to server from recipe(s) (alias "s")"""
 
@@ -185,8 +187,9 @@ def main():
     parser.add_argument('--version', action='version',
             version='%(prog)s ' + __version__)
     subparsers = parser.add_subparsers(title=u"commands")
-    generate(subparsers)
-    setup(subparsers)
+    for cls in (c for c in globals().values() if hasattr(c, '_subcommand') and
+            issubclass(c, subcommand)):
+        cls(subparsers)
     args = parser.parse_args().__dict__
     command = args.pop('command')
     command(**args)
