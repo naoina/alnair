@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.3
+---
+
+- Add command-line interface
+- Add Distribution.config() API
+
 0.2
 ---
 
