@@ -11,8 +11,9 @@ templates_dir = os.path.join(os.path.dirname(__file__), '..', 'alnair',
 
 
 def setup_function(func):
-    from fabric.api import env
-    env.hosts = []
+    from fabric import api, state
+    reload(state)
+    reload(api)
 
 
 @pytest.mark.parametrize(('filename',), [
@@ -155,17 +156,23 @@ def test_setup_with_host_not_given(distname, package):
     from alnair import Distribution
     with mock.patch('alnair.command.Distribution', spec=Distribution) as \
             mock_dist:
-        from alnair.command import main
         mock_inst = mock.MagicMock(spec=Distribution)
         mock_inst.__enter__.return_value = mock_inst
         mock_dist.return_value = mock_inst
+        from fabric.state import _AttributeDict
+        called_hosts = []
+        orig_setattr = _AttributeDict.__setattr__
+        _AttributeDict.__setattr__ = lambda self, n, v: called_hosts.append(v)
+        from alnair.command import main
         main()
-        from fabric.api import env
-        assert mock_dist.call_count == 1
-        assert mock_dist.call_args == mock.call(distname)
-        assert mock_inst.install.call_count == 1
-        assert mock_inst.install.call_args == mock.call([package])
-        assert not env.hosts
+        try:
+            assert mock_dist.call_count == 1
+            assert mock_dist.call_args == mock.call(distname)
+            assert mock_inst.install.call_count == 1
+            assert mock_inst.install.call_args_list == [mock.call([package])]
+            assert not called_hosts
+        finally:
+            _AttributeDict.__setattr__ = orig_setattr
 
 
 @pytest.mark.randomize(('distname', str), ('package', str), ('host', str),
@@ -175,17 +182,23 @@ def test_setup_with_single_host_given(distname, package, host):
     from alnair import Distribution
     with mock.patch('alnair.command.Distribution', spec=Distribution) as \
             mock_dist:
-        from alnair.command import main
         mock_inst = mock.MagicMock(spec=Distribution)
         mock_inst.__enter__.return_value = mock_inst
         mock_dist.return_value = mock_inst
+        from fabric.state import _AttributeDict
+        called_hosts = []
+        orig_setattr = _AttributeDict.__setattr__
+        _AttributeDict.__setattr__ = lambda self, n, v: called_hosts.append(v)
+        from alnair.command import main
         main()
-        from fabric.api import env
-        assert mock_dist.call_count == 1
-        assert mock_dist.call_args == mock.call(distname)
-        assert mock_inst.install.call_count == 1
-        assert mock_inst.install.call_args == mock.call([package])
-        assert env.hosts == [host]
+        try:
+            assert mock_dist.call_count == 1
+            assert mock_dist.call_args == mock.call(distname)
+            assert mock_inst.install.call_count == 1
+            assert mock_inst.install.call_args_list == [mock.call([package])]
+            assert called_hosts == [host]
+        finally:
+            _AttributeDict.__setattr__ = orig_setattr
 
 
 @pytest.mark.randomize(('distname', str), ('package', str),
@@ -196,17 +209,24 @@ def test_setup_with_multiple_host_given(distname, package, hosts):
     from alnair import Distribution
     with mock.patch('alnair.command.Distribution', spec=Distribution) as \
             mock_dist:
-        from alnair.command import main
         mock_inst = mock.MagicMock(spec=Distribution)
         mock_inst.__enter__.return_value = mock_inst
         mock_dist.return_value = mock_inst
+        from fabric.state import _AttributeDict
+        called_hosts = []
+        orig_setattr = _AttributeDict.__setattr__
+        _AttributeDict.__setattr__ = lambda self, n, v: called_hosts.append(v)
+        from alnair.command import main
         main()
-        from fabric.api import env
-        assert mock_dist.call_count == 1
-        assert mock_dist.call_args == mock.call(distname)
-        assert mock_inst.install.call_count == 1
-        assert mock_inst.install.call_args == mock.call([package])
-        assert env.hosts == hosts
+        try:
+            assert mock_dist.call_count == 1
+            assert mock_dist.call_args == mock.call(distname)
+            assert mock_inst.install.call_count == 2
+            assert mock_inst.install.call_args_list == \
+                    [mock.call([package])] * 2
+            assert called_hosts == hosts
+        finally:
+            _AttributeDict.__setattr__ = orig_setattr
 
 
 @pytest.mark.parametrize(('args',), [
@@ -226,17 +246,23 @@ def test_config_with_host_not_given(distname, package):
     from alnair import Distribution
     with mock.patch('alnair.command.Distribution', spec=Distribution) as \
             mock_dist:
-        from alnair.command import main
         mock_inst = mock.MagicMock(spec=Distribution)
         mock_inst.__enter__.return_value = mock_inst
         mock_dist.return_value = mock_inst
+        from fabric.state import _AttributeDict
+        called_hosts = []
+        orig_setattr = _AttributeDict.__setattr__
+        _AttributeDict.__setattr__ = lambda self, n, v: called_hosts.append(v)
+        from alnair.command import main
         main()
-        from fabric.api import env
-        assert mock_dist.call_count == 1
-        assert mock_dist.call_args == mock.call(distname)
-        assert mock_inst.config.call_count == 1
-        assert mock_inst.config.call_args == mock.call([package])
-        assert not env.hosts
+        try:
+            assert mock_dist.call_count == 1
+            assert mock_dist.call_args == mock.call(distname)
+            assert mock_inst.config.call_count == 1
+            assert mock_inst.config.call_args_list == [mock.call([package])]
+            assert not called_hosts
+        finally:
+            _AttributeDict.__setattr__ = orig_setattr
 
 
 @pytest.mark.randomize(('distname', str), ('package', str), ('host', str),
@@ -246,17 +272,23 @@ def test_config_with_single_host_given(distname, package, host):
     from alnair import Distribution
     with mock.patch('alnair.command.Distribution', spec=Distribution) as \
             mock_dist:
-        from alnair.command import main
         mock_inst = mock.MagicMock(spec=Distribution)
         mock_inst.__enter__.return_value = mock_inst
         mock_dist.return_value = mock_inst
+        from fabric.state import _AttributeDict
+        called_hosts = []
+        orig_setattr = _AttributeDict.__setattr__
+        _AttributeDict.__setattr__ = lambda self, n, v: called_hosts.append(v)
+        from alnair.command import main
         main()
-        from fabric.api import env
-        assert mock_dist.call_count == 1
-        assert mock_dist.call_args == mock.call(distname)
-        assert mock_inst.config.call_count == 1
-        assert mock_inst.config.call_args == mock.call([package])
-        assert env.hosts == [host]
+        try:
+            assert mock_dist.call_count == 1
+            assert mock_dist.call_args == mock.call(distname)
+            assert mock_inst.config.call_count == 1
+            assert mock_inst.config.call_args_list == [mock.call([package])]
+            assert called_hosts == [host]
+        finally:
+            _AttributeDict.__setattr__ = orig_setattr
 
 
 @pytest.mark.randomize(('distname', str), ('package', str),
@@ -267,14 +299,21 @@ def test_config_with_multiple_host_given(distname, package, hosts):
     from alnair import Distribution
     with mock.patch('alnair.command.Distribution', spec=Distribution) as \
             mock_dist:
-        from alnair.command import main
         mock_inst = mock.MagicMock(spec=Distribution)
         mock_inst.__enter__.return_value = mock_inst
         mock_dist.return_value = mock_inst
+        from fabric.state import _AttributeDict
+        called_hosts = []
+        orig_setattr = _AttributeDict.__setattr__
+        _AttributeDict.__setattr__ = lambda self, n, v: called_hosts.append(v)
+        from alnair.command import main
         main()
-        from fabric.api import env
-        assert mock_dist.call_count == 1
-        assert mock_dist.call_args == mock.call(distname)
-        assert mock_inst.config.call_count == 1
-        assert mock_inst.config.call_args == mock.call([package])
-        assert env.hosts == hosts
+        try:
+            assert mock_dist.call_count == 1
+            assert mock_dist.call_args == mock.call(distname)
+            assert mock_inst.config.call_count == 2
+            assert mock_inst.config.call_args_list == \
+                    [mock.call([package])] * 2
+            assert called_hosts == hosts
+        finally:
+            _AttributeDict.__setattr__ = orig_setattr

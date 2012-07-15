@@ -173,12 +173,14 @@ class setup(subcommand):
 
     @classmethod
     def execute(cls, distname, packages, hosts):
-        if hosts is not None:
-            from fabric.api import env
-            hosts = [host.strip() for host in hosts.split(',')]
-            env.hosts = hosts
         with Distribution(distname) as dist:
-            dist.install(packages)
+            if hosts is None:
+                dist.install(packages)
+            else:
+                from fabric.api import env
+                for host in (h.strip() for h in hosts.split(',')):
+                    env.host_string = host
+                    dist.install(packages)
 
 
 @subcommand.define
@@ -190,12 +192,14 @@ class config(subcommand):
 
     @classmethod
     def execute(cls, distname, packages, hosts):
-        if hosts is not None:
-            from fabric.api import env
-            hosts = [host.strip() for host in hosts.split(',')]
-            env.hosts = hosts
         with Distribution(distname) as dist:
-            dist.config(packages)
+            if hosts is None:
+                dist.config(packages)
+            else:
+                from fabric.api import env
+                for host in (h.strip() for h in hosts.split(',')):
+                    env.host_string = host
+                    dist.config(packages)
 
 
 def main():
