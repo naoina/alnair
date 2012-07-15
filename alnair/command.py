@@ -175,12 +175,12 @@ class setup(subcommand):
     def execute(cls, distname, packages, hosts):
         with Distribution(distname) as dist:
             if hosts is None:
-                dist.install(packages)
+                dist.setup(packages)
             else:
                 from fabric.api import env
                 for host in (h.strip() for h in hosts.split(',')):
                     env.host_string = host
-                    dist.install(packages)
+                    dist.setup(packages)
 
 
 @subcommand.define

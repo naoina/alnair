@@ -61,8 +61,8 @@ class Distribution(object):
         self._within_context = False
         self._packages = []
 
-    def install(self, pkgs, *args, **kwargs):
-        """Install packages to a remote server
+    def setup(self, pkgs, *args, **kwargs):
+        """Setup packages to a remote server
 
         An arguments types are instance of :class:`alnair.package.Package` or
         string.
@@ -83,7 +83,7 @@ class Distribution(object):
         pkgs = ' '.join(pkg.name for pkg in packages)
         fa.sudo('%s %s' % (install_command, pkgs))
         if not self._within_context:
-            self.after_install()
+            self.after_setup()
 
     def config(self, pkgs, *args):
         """Config files of packages put on to a remote server
@@ -105,7 +105,7 @@ class Distribution(object):
             fa.put(sio, filename, use_sudo=True)
             self.exec_commands(config)
 
-    def after_install(self):
+    def after_setup(self):
         self._exec_configs(alnair.setup)
         for pkg in self._packages:
             setup = pkg.setup
@@ -126,7 +126,7 @@ class Distribution(object):
             func(cmd)
 
     def get_after_command(self, after):
-        """Get an command of after an install
+        """Get an command of after an setup
 
         :param after: instance of :class:`alnair.command.Command` or callable
         :returns: instance of :class:`alnair.package.Command` or that inherited
@@ -223,5 +223,5 @@ class Distribution(object):
     def __exit__(self, exc_type, exc_value, traceback):
         self._within_context = False
         if not exc_type:
-            self.after_install()
+            self.after_setup()
         return False

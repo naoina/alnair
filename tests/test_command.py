@@ -168,8 +168,8 @@ def test_setup_with_host_not_given(distname, package):
         try:
             assert mock_dist.call_count == 1
             assert mock_dist.call_args == mock.call(distname)
-            assert mock_inst.install.call_count == 1
-            assert mock_inst.install.call_args_list == [mock.call([package])]
+            assert mock_inst.setup.call_count == 1
+            assert mock_inst.setup.call_args_list == [mock.call([package])]
             assert not called_hosts
         finally:
             _AttributeDict.__setattr__ = orig_setattr
@@ -194,8 +194,8 @@ def test_setup_with_single_host_given(distname, package, host):
         try:
             assert mock_dist.call_count == 1
             assert mock_dist.call_args == mock.call(distname)
-            assert mock_inst.install.call_count == 1
-            assert mock_inst.install.call_args_list == [mock.call([package])]
+            assert mock_inst.setup.call_count == 1
+            assert mock_inst.setup.call_args_list == [mock.call([package])]
             assert called_hosts == [host]
         finally:
             _AttributeDict.__setattr__ = orig_setattr
@@ -221,8 +221,8 @@ def test_setup_with_multiple_host_given(distname, package, hosts):
         try:
             assert mock_dist.call_count == 1
             assert mock_dist.call_args == mock.call(distname)
-            assert mock_inst.install.call_count == 2
-            assert mock_inst.install.call_args_list == \
+            assert mock_inst.setup.call_count == 2
+            assert mock_inst.setup.call_args_list == \
                     [mock.call([package])] * 2
             assert called_hosts == hosts
         finally:
