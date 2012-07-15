@@ -19,7 +19,7 @@ class pytest(TestCommand):
         import pytest
         raise SystemExit(pytest.main(self.test_args))
 
-version = '0.2'
+version = '0.3'
 
 install_requires = [
     'fabric>=1.4.2',
