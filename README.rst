@@ -33,12 +33,12 @@ First, generate the recipes template set by following command::
 
 In this example, distribution name using ``archlinux``.
 ``recipes/archlinux/common.py`` directories and file are created to current directory by this command.
-Also ``"g"`` as an alias for the `generate` command has been defined.
+Also "``g``" as an alias for the ``generate`` command has been defined.
 The following command is same meaning as above::
 
    % alnair g template archlinux
 
-Next, edit `install_command` variable in ``common.py`` for the target distribution::
+Next, edit ``install_command`` variable in ``common.py`` for the target distribution::
 
    # common.py
    install_command = 'pacman -Sy'
@@ -48,7 +48,7 @@ Next, generate recipe template for package setup by following command::
    % alnair g recipe python
 
 ``python.py`` file is created on ``recipes/archlinux/`` directory by this command.
-In fact, directories where you want to create the files are ``recipes/\*/``.
+In fact, directories where you want to create the files are ``recipes/*/``.
 
 Finally, edit ``python.py`` for more settings if necessary and setup to the server by following command::
 
@@ -57,7 +57,7 @@ Finally, edit ``python.py`` for more settings if necessary and setup to the serv
 Using as a library
 ------------------
 
-You can use the following code instead of `alnair setup archlinux python` command::
+You can use the following code instead of "``alnair setup archlinux python``" command::
 
    from alnair import Distribution
 
