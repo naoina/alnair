@@ -34,7 +34,7 @@ import sys
 from contextlib import nested
 from glob import glob
 
-from alnair import __version__
+from alnair import __version__, Distribution
 
 
 def fail(msg):
@@ -51,19 +51,28 @@ def create_from_template(filename, outputpath, **kwargs):
 
 
 class subcommand(object):
-    def __init__(self, subparsers, alias=None):
+    def __init__(self, subparsers):
         cls = self.__class__
-        parser = subparsers.add_parser(cls.__name__.lower(), help=cls.__doc__)
-        subparser = parser.add_subparsers(title=u"subcommands")
-        for name, val in cls.__dict__.iteritems():
-            if hasattr(val, '_subcommand'):
-                parser_subcommand = subparser.add_parser(name,
-                        help=val.__doc__)
-                for args, kwargs in val.args:
-                    parser_subcommand.add_argument(*args, **kwargs)
-                parser_subcommand.set_defaults(command=val().execute)
+        parser = subparsers.add_parser(cls.__name__.lower(), help=cls.__doc__,
+                description=cls.__doc__)
+        self.define_args(parser, cls)
+        subcmds = [(n, v) for n, v in cls.__dict__.iteritems() if hasattr(v,
+            '_subcommand')]
+        if subcmds:
+            subparser = parser.add_subparsers(title=u"subcommands")
+        for name, val in subcmds:
+            parser_subcommand = subparser.add_parser(name, help=val.__doc__,
+                    description=val.__doc__)
+            self.define_args(parser_subcommand, val)
         if hasattr(cls, 'alias'):
-            subparsers.add_parser(cls.alias, parents=[parser], add_help=False)
+            subparsers.add_parser(cls.alias, description=cls.__doc__,
+                    parents=[parser], add_help=False)
+
+    def define_args(self, parser, cls):
+        for args, kwargs in getattr(cls, 'args', []):
+            parser.add_argument(*args, **kwargs)
+        if hasattr(cls, 'execute'):
+            parser.set_defaults(command=cls.execute)
 
     @classmethod
     def define(cls, klass):
@@ -95,7 +104,8 @@ class generate(subcommand):
                 )),
             ]
 
-        def execute(self, distname, directory):
+        @classmethod
+        def execute(cls, distname, directory):
             path = os.path.join(directory, generate.RECIPES_DIR, distname)
             print u"creating directory: %s" % path
             os.makedirs(path, mode=0o755)
@@ -111,16 +121,17 @@ class generate(subcommand):
             (['packages'], dict(
                 metavar='PACKAGE',
                 nargs='+',
-                help=u"name of a package(s)",
+                help=u"name of package(s)",
                 )),
             (['-f', '--force'], dict(
                 dest='force',
                 action='store_true',
-                help=u"overwrite an existent files",
+                help=u"overwrite existent files",
                 )),
             ]
 
-        def execute(self, packages, force):
+        @classmethod
+        def execute(cls, packages, force):
             distdirs = [d for d in glob(os.path.join(generate.RECIPES_DIR, '*')) if os.path.isdir(d)]
             if not distdirs:
                 fail(
@@ -136,12 +147,46 @@ class generate(subcommand):
                             package=package)
 
 
+class setup(subcommand):
+    """install and setup package(s) to server from recipe(s) (alias "s")"""
+
+    alias = 's'
+
+    args = [
+        (['distname'], dict(
+            metavar='DISTNAME',
+            help=u"name of the distribution (e.g. archlinux)",
+            )),
+        (['packages'], dict(
+            metavar='PACKAGE',
+            nargs='+',
+            help=u"name of package(s) to installation",
+            )),
+        (['--host'], dict(
+            dest='hosts',
+            metavar='HOST',
+            help=u"server hostname. If you want to target more than one host,"
+                 u" please hostnames separated by commas",
+            )),
+        ]
+
+    @classmethod
+    def execute(cls, distname, packages, hosts):
+        if hosts is not None:
+            from fabric.api import env
+            hosts = [host.strip() for host in hosts.split(',')]
+            env.hosts = hosts
+        with Distribution(distname) as dist:
+            dist.install(packages)
+
+
 def main():
     parser = argparse.ArgumentParser(description=u"alnair command-line interface.")
     parser.add_argument('--version', action='version',
             version='%(prog)s ' + __version__)
     subparsers = parser.add_subparsers(title=u"commands")
     generate(subparsers)
+    setup(subparsers)
     args = parser.parse_args().__dict__
     command = args.pop('command')
     command(**args)
