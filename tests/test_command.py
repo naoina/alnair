@@ -10,6 +10,11 @@ templates_dir = os.path.join(os.path.dirname(__file__), '..', 'alnair',
         'templates')
 
 
+def setup_function(func):
+    from fabric.api import env
+    env.hosts = []
+
+
 @pytest.mark.parametrize(('filename',), [
     ('common.py',),
     ])
@@ -201,4 +206,75 @@ def test_setup_with_multiple_host_given(distname, package, hosts):
         assert mock_dist.call_args == mock.call(distname)
         assert mock_inst.install.call_count == 1
         assert mock_inst.install.call_args == mock.call([package])
+        assert env.hosts == hosts
+
+
+@pytest.mark.parametrize(('args',), [
+    ([],), (['distname'],),
+    ])
+def test_config_with_args_not_enough(args):
+    sys.argv = ['alnair', 'config'] + args
+    from alnair.command import main
+    with pytest.raises(SystemExit):
+        main()
+
+
+@pytest.mark.randomize(('distname', str), ('package', str), fixed_length=8,
+        ncalls=5)
+def test_config_with_host_not_given(distname, package):
+    sys.argv = ['alnair', 'config', distname, package]
+    from alnair import Distribution
+    with mock.patch('alnair.command.Distribution', spec=Distribution) as \
+            mock_dist:
+        from alnair.command import main
+        mock_inst = mock.MagicMock(spec=Distribution)
+        mock_inst.__enter__.return_value = mock_inst
+        mock_dist.return_value = mock_inst
+        main()
+        from fabric.api import env
+        assert mock_dist.call_count == 1
+        assert mock_dist.call_args == mock.call(distname)
+        assert mock_inst.config.call_count == 1
+        assert mock_inst.config.call_args == mock.call([package])
+        assert not env.hosts
+
+
+@pytest.mark.randomize(('distname', str), ('package', str), ('host', str),
+        fixed_length=8, ncalls=5)
+def test_config_with_single_host_given(distname, package, host):
+    sys.argv = ['alnair', 'config', '--host', host, distname, package]
+    from alnair import Distribution
+    with mock.patch('alnair.command.Distribution', spec=Distribution) as \
+            mock_dist:
+        from alnair.command import main
+        mock_inst = mock.MagicMock(spec=Distribution)
+        mock_inst.__enter__.return_value = mock_inst
+        mock_dist.return_value = mock_inst
+        main()
+        from fabric.api import env
+        assert mock_dist.call_count == 1
+        assert mock_dist.call_args == mock.call(distname)
+        assert mock_inst.config.call_count == 1
+        assert mock_inst.config.call_args == mock.call([package])
+        assert env.hosts == [host]
+
+
+@pytest.mark.randomize(('distname', str), ('package', str),
+        ('hosts', [str, str]), fixed_length=8, ncalls=5)
+def test_config_with_multiple_host_given(distname, package, hosts):
+    sys.argv = ['alnair', 'config', '--host', ','.join(hosts), distname,
+            package]
+    from alnair import Distribution
+    with mock.patch('alnair.command.Distribution', spec=Distribution) as \
+            mock_dist:
+        from alnair.command import main
+        mock_inst = mock.MagicMock(spec=Distribution)
+        mock_inst.__enter__.return_value = mock_inst
+        mock_dist.return_value = mock_inst
+        main()
+        from fabric.api import env
+        assert mock_dist.call_count == 1
+        assert mock_dist.call_args == mock.call(distname)
+        assert mock_inst.config.call_count == 1
+        assert mock_inst.config.call_args == mock.call([package])
         assert env.hosts == hosts

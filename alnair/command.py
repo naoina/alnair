@@ -153,7 +153,6 @@ class setup(subcommand):
     """install and setup package(s) to server from recipe(s) (alias "s")"""
 
     alias = 's'
-
     args = [
         (['distname'], dict(
             metavar='DISTNAME',
@@ -180,6 +179,23 @@ class setup(subcommand):
             env.hosts = hosts
         with Distribution(distname) as dist:
             dist.install(packages)
+
+
+@subcommand.define
+class config(subcommand):
+    """configure package(s) from recipe(s) (alias "c")"""
+
+    alias = 'c'
+    args = setup.args
+
+    @classmethod
+    def execute(cls, distname, packages, hosts):
+        if hosts is not None:
+            from fabric.api import env
+            hosts = [host.strip() for host in hosts.split(',')]
+            env.hosts = hosts
+        with Distribution(distname) as dist:
+            dist.config(packages)
 
 
 def main():
