@@ -80,8 +80,28 @@ class TestDistribution(object):
                         [alnair.Package('pkg%d' % i)]
                     dist.setup('pkg%d' % i)
             assert mock_dist['after_setup'].call_count == 1
-            assert [p.name for p in dist._packages] == \
+            assert [name for p in dist._packages for name in p.name] == \
                     ['pkg%d' % x for x in range(setup_num)]
+
+    @pytest.mark.parametrize(('pkgs',), [
+        ([alnair.Package('pkg1', 'pkg2'), alnair.Package('pkg3', 'pkg4')],),
+        ])
+    def test_setup_with_multiple_package_names(self, pkgs):
+        with contextlib.nested(
+                mock.patch('fabric.api.sudo'),
+                mock.patch.multiple('alnair.Distribution',
+                    get_packages=mock.DEFAULT,
+                    get_install_command=mock.DEFAULT,
+                    after_setup=mock.DEFAULT)
+                ) as (mock_fa_sudo, mock_dist):
+            mock_dist['get_install_command'].return_value = \
+                'test_install_command'
+            dist = alnair.Distribution('dummy')
+            mock_dist['get_packages'].return_value = pkgs
+            dist.setup('dummy')
+            expected = [mock.call('test_install_command pkg1 pkg2 pkg3 pkg4')]
+            assert mock_fa_sudo.call_count == 1
+            assert mock_fa_sudo.call_args_list == expected
 
     @pytest.mark.parametrize(('pkgnames', 'confnames', 'testdata'),
         # [([],), (['pkg1'], ['test_conffile1'], ['testdata1']),
@@ -288,7 +308,7 @@ class TestDistribution(object):
             result = dist.get_packages(pkgnames)
             assert len(result) == len(pkgnames)
             assert all([isinstance(x, alnair.Package) for x in result])
-            assert all([x.name == y for x, y in zip(result, pkgnames)])
+            assert all([x.name == (y,) for x, y in zip(result, pkgnames)])
 
     @pytest.mark.parametrize(('pkgs',),
         # list of alnair.Package objects
@@ -313,7 +333,7 @@ class TestDistribution(object):
             result = dist.get_packages(pkgs)
             assert len(result) == len(pkgs)
             assert all([isinstance(x, alnair.Package) for x in result])
-            assert all([x.name == (getattr(y, 'name', y)) for x, y in
+            assert all([x.name == (getattr(y, 'name', (y,))) for x, y in
                 zip(result, pkgs)])
 
     @pytest.mark.parametrize(('pkgs',),
@@ -325,9 +345,15 @@ class TestDistribution(object):
             dist = alnair.Distribution('dummy')
             pkg, additionals = pkgs[0], pkgs[1:]
             result = dist.get_packages(pkg, *additionals)
+            expected = []
+            for p in pkgs:
+                if isinstance(p, str):
+                    expected.append(p)
+                else:
+                    expected.extend(name for name in p.name)
             assert len(result) == len(pkgs)
-            assert sorted(x.name for x in result) == \
-                    sorted(x if isinstance(x, str) else x.name for x in pkgs)
+            assert sorted(name for x in result for name in x.name) == \
+                    sorted(expected)
 
     @pytest.mark.parametrize(('exc',), [
         (alnair.NoSuchDirectoryError,), (alnair.NoSuchFileError,),

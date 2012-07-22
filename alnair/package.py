@@ -117,15 +117,17 @@ class Setup(Command):
 
 
 class Package(object):
-    def __init__(self, name=None):
+    def __init__(self, name=None, *args):
         """Constructor of Package class
 
         :param name: name of package (e.g. 'nginx'). If not given or None,
             name is takes from filename (e.g. If filename is 'foo.py', name is
             'foo').
+        :param args: name of related packages
+            (e.g. 'mysql' and 'mysql-clients')
         """
         if name is None:
             filename = inspect.currentframe().f_back.f_code.co_filename
             name = os.path.splitext(os.path.basename(filename))[0]
-        self.name = name
+        self.name = (name,) + args
         self.setup = Setup()

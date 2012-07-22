@@ -89,11 +89,17 @@ class TestPackage(object):
     @pytest.mark.randomize(('name', str), ncalls=5)
     def test_init_with_name(self, name):
         package = alnair.Package(name)
-        assert package.name == name
+        assert package.name == (name,)
+        assert isinstance(package.setup, alnair.package.Setup)
+
+    @pytest.mark.randomize(('names', [str, str, str]), ncalls=5)
+    def test_init_with_multiple_name(self, names):
+        package = alnair.Package(names[0], *names[1:])
+        assert package.name == tuple(names)
         assert isinstance(package.setup, alnair.package.Setup)
 
     def test_init_with_default(self):
         package = alnair.Package()
         expected = os.path.splitext(os.path.basename(__file__))[0]
-        assert package.name == expected
+        assert package.name == (expected,)
         assert isinstance(package.setup, alnair.package.Setup)

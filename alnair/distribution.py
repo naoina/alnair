@@ -80,7 +80,7 @@ class Distribution(object):
         self._packages.extend(packages)
         install_command = self.get_install_command(
                 kwargs.get('install_command'))
-        pkgs = ' '.join(pkg.name for pkg in packages)
+        pkgs = ' '.join(name for pkg in packages for name in pkg.name)
         fa.sudo('%s %s' % (install_command, pkgs))
         if not self._within_context:
             self.after_setup()
