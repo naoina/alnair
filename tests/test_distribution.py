@@ -26,6 +26,7 @@ class TestDistribution(object):
         assert dist.install_command is None
         assert dist._within_context is False
         assert dist._packages == []
+        assert dist.dry_run is False
 
     @pytest.mark.randomize(('install_command', str), ncalls=5)
     def test_init_with_install_command(self, install_command):
@@ -34,6 +35,14 @@ class TestDistribution(object):
         assert dist.install_command == install_command
         assert dist._within_context is False
         assert dist._packages == []
+
+    def test_init_with_dry_run(self):
+        dist = alnair.Distribution('dummy', dry_run=True)
+        assert dist.name == 'dummy'
+        assert dist.install_command is None
+        assert dist._within_context is False
+        assert dist._packages == []
+        assert dist.dry_run is True
 
     def test_default_config_dir(self):
         expected = os.path.abspath('recipes')
@@ -102,6 +111,27 @@ class TestDistribution(object):
             expected = [mock.call('test_install_command pkg1 pkg2 pkg3 pkg4')]
             assert mock_fa_sudo.call_count == 1
             assert mock_fa_sudo.call_args_list == expected
+
+    @pytest.mark.parametrize(('pkgs',),
+        [(L,) for L in itertools.combinations(['pkg1', 'pkg2', 'pkg3']
+            + [alnair.Package(x) for x in ['pkg1', 'pkg2', 'pkg3']], 3)])
+    def test_setup_with_dry_run(self, pkgs):
+        pkg, args = pkgs[0], pkgs[1:]
+        mock_pkgs = [alnair.Package(p) for p in ['pkg1', 'pkg2', 'pkg3']]
+        with contextlib.nested(
+                mock.patch('fabric.api.sudo'),
+                mock.patch.multiple('alnair.Distribution',
+                    get_packages=mock.DEFAULT,
+                    get_install_command=mock.DEFAULT,
+                    after_setup=mock.DEFAULT)
+                ) as (mock_fa_sudo, mock_dist):
+            mock_dist['get_packages'].return_value = mock_pkgs
+            mock_dist['get_install_command'].return_value = \
+                'test_install_command'
+            dist = alnair.Distribution('dummy')
+            dist.setup(pkg, *args, dry_run=True)
+        assert mock_fa_sudo.call_count == 0
+        assert mock_dist['after_setup'].call_count == 1
 
     @pytest.mark.parametrize(('pkgnames', 'confnames', 'testdata'),
         # [([],), (['pkg1'], ['test_conffile1'], ['testdata1']),
@@ -180,6 +210,23 @@ class TestDistribution(object):
             assert mock_put.call_args[0][1] == 'testconfig'
             assert sio.read() == "testdata"
 
+    @pytest.mark.parametrize(('pkgnames', 'confnames', 'testdata'),
+        # [([],), (['pkg1'], ['test_conffile1'], ['testdata1']),
+        #   (['pkg1', 'pkg2'], ['test_conffile1', 'test_conffile2'],
+        #       ['testdata1', 'testdata2']),
+        #   (['pkg1', 'pkg2', 'pkg3'],
+        #       ['test_conffile1', 'test_conffile2', 'test_conffile3'],
+        #       ['testdata1', 'testdata2', 'testdata3'])]
+        [(['pkg%d' % x for x in range(1, y)],
+            ['test_conffile%d' % x for x in range(1, y)],
+            ['testdata%d' % x for x in range(1, y)]) for y in range(1, 5)])
+    def test_config_with_dry_run(self, pkgnames, confnames, testdata):
+        with mock.patch('fabric.api.put') as mock_put:
+            dist = alnair.Distribution(self.TEST_DISTRIBUTION)
+            dist.CONFIG_DIR = self.TEST_FIXTURE_DIR
+            dist.config(pkgnames, dry_run=True)
+            assert mock_put.call_count == 0
+
     @pytest.mark.parametrize(('after',), [
         (mock.Mock(spec=alnair.Command),), (None,)])
     @pytest.mark.randomize(('num', int), min_num=1, max_num=20, ncalls=1)
@@ -251,6 +298,15 @@ class TestDistribution(object):
         dist.exec_commands(cmd)
         expected = [mock.call('cmd%d' % i) for i in range(num)]
         assert func.call_args_list == expected
+
+    @pytest.mark.randomize(('num', int), min_num=1, max_num=10)
+    def test_exec_commands_with_dry_run(self, num):
+        dist = alnair.Distribution('dummy', dry_run=True)
+        func = mock.Mock()
+        cmd = mock.Mock(spec=alnair.Command)
+        cmd._commands = [('cmd%d' % i, func) for i in range(num)]
+        dist.exec_commands(cmd)
+        assert func.call_count == 0
 
     def test_get_after_command_with_command(self):
         dist = alnair.Distribution('dummy')

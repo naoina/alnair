@@ -50,7 +50,7 @@ from alnair.package import Command, Package
 class Distribution(object):
     CONFIG_DIR = os.path.abspath('recipes')
 
-    def __init__(self, name, install_command=None):
+    def __init__(self, name, install_command=None, dry_run=False):
         """Constructor of Distribution class
 
         :param name: distribution name (e.g. 'archlinux')
@@ -60,6 +60,7 @@ class Distribution(object):
         self.install_command = install_command
         self._within_context = False
         self._packages = []
+        self.dry_run = dry_run
 
     def setup(self, pkgs, *args, **kwargs):
         """Setup packages to a remote server
@@ -75,17 +76,25 @@ class Distribution(object):
             see also :meth:`get_packages`
         :param *args: iterable of package name string or instance of
             :class:`alnair.package.Package` . see also :meth:`get_packages`
+        :param kwargs: other options, see following
+        :param install_command: string of the one time installation command
+        :param dry_run: testing for setup process if True
         """
         packages = self.get_packages(pkgs, *args)
         self._packages.extend(packages)
         install_command = self.get_install_command(
                 kwargs.get('install_command'))
         pkgs = ' '.join(name for pkg in packages for name in pkg.name)
-        fa.sudo('%s %s' % (install_command, pkgs))
+        command = '%s %s' % (install_command, pkgs)
+        self.dry_run = kwargs.get('dry_run', False)
+        if self.dry_run:
+            print 'running command: %s' % command
+        else:
+            fa.sudo(command)
         if not self._within_context:
             self.after_setup()
 
-    def config(self, pkgs, *args):
+    def config(self, pkgs, *args, **kwargs):
         """Config files of packages put on to a remote server
 
         :param pkgs: package name string or instance of
@@ -93,7 +102,10 @@ class Distribution(object):
             see also :meth:`get_packages`
         :param *args: iterable of package name string or instance of
             :class:`alnair.package.Package` . see also :meth:`get_packages`
+        :param kwargs: other options, see following
+        :param dry_run: testing for setup process if True
         """
+        self.dry_run = kwargs.get('dry_run', False)
         packages = self.get_packages(pkgs, *args)
         self._exec_configs(alnair.setup)
         for pkg in packages:
@@ -102,7 +114,10 @@ class Distribution(object):
     def _exec_configs(self, setup):
         for filename, config in setup.config_all.iteritems():
             sio = StringIO(config._contents.decode('utf-8'))
-            fa.put(sio, filename, use_sudo=True)
+            if self.dry_run:
+                print 'putting file: %s' % filename
+            else:
+                fa.put(sio, filename, use_sudo=True)
             self.exec_commands(config)
 
     def after_setup(self):
@@ -123,7 +138,10 @@ class Distribution(object):
             inherited it
         """
         for cmd, func in obj._commands:
-            func(cmd)
+            if self.dry_run:
+                print 'running command: %s' % cmd
+            else:
+                func(cmd)
 
     def get_after_command(self, after):
         """Get an command of after an setup

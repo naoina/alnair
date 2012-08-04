@@ -36,6 +36,8 @@ from glob import glob
 
 from alnair import __version__, Distribution
 
+dry_run = False
+
 
 def fail(msg):
     sys.stderr.write('alnair: error: %s\n' % msg)
@@ -46,8 +48,9 @@ def create_from_template(filename, outputpath, **kwargs):
     templatedir = os.path.join(os.path.dirname(__file__), 'templates')
     fpath = os.path.join(templatedir, '%s.template' % filename)
     print u"creating file: %s" % outputpath
-    with nested(open(fpath), open(outputpath, 'w')) as (rf, wf):
-        wf.write(rf.read() % kwargs)
+    if not dry_run:
+        with nested(open(fpath), open(outputpath, 'w')) as (rf, wf):
+            wf.write(rf.read() % kwargs)
 
 
 class subcommand(object):
@@ -109,7 +112,8 @@ class generate(subcommand):
         def execute(cls, distname, directory):
             path = os.path.join(directory, generate.RECIPES_DIR, distname)
             print u"creating directory: %s" % path
-            os.makedirs(path, mode=0o755)
+            if not dry_run:
+                os.makedirs(path, mode=0o755)
             outputpath = os.path.join(path, 'common.py')
             create_from_template('common.py', outputpath=outputpath,
                     distname=distname)
@@ -175,12 +179,12 @@ class setup(subcommand):
     def execute(cls, distname, packages, hosts):
         with Distribution(distname) as dist:
             if hosts is None:
-                dist.setup(packages)
+                dist.setup(packages, dry_run=dry_run)
             else:
                 from fabric.api import env
                 for host in (h.strip() for h in hosts.split(',')):
                     env.host_string = host
-                    dist.setup(packages)
+                    dist.setup(packages, dry_run=dry_run)
 
 
 @subcommand.define
@@ -194,22 +198,26 @@ class config(subcommand):
     def execute(cls, distname, packages, hosts):
         with Distribution(distname) as dist:
             if hosts is None:
-                dist.config(packages)
+                dist.config(packages, dry_run=dry_run)
             else:
                 from fabric.api import env
                 for host in (h.strip() for h in hosts.split(',')):
                     env.host_string = host
-                    dist.config(packages)
+                    dist.config(packages, dry_run=dry_run)
 
 
 def main():
     parser = argparse.ArgumentParser(description=u"alnair command-line interface.")
     parser.add_argument('--version', action='version',
             version='%(prog)s ' + __version__)
+    parser.add_argument('--dry-run', action='store_true',
+            help=u"testing for running commands")
     subparsers = parser.add_subparsers(title=u"commands")
     for cls in (c for c in globals().values() if hasattr(c, '_subcommand') and
             issubclass(c, subcommand)):
         cls(subparsers)
     args = parser.parse_args().__dict__
+    global dry_run
+    dry_run = args.pop('dry_run')
     command = args.pop('command')
     command(**args)

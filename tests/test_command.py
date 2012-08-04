@@ -48,6 +48,18 @@ def test_generate_template(tmpdir, distname):
     tmpdir.remove()
 
 
+@pytest.mark.randomize(('distname', str), ncalls=5)
+def test_generate_template_with_dry_run(tmpdir, distname):
+    sys.argv = ['alnair', '--dry-run', 'generate', 'template', distname,
+            str(tmpdir)]
+    from alnair.command import main
+    main()
+    assert not tmpdir.join('recipes').check()
+    assert not tmpdir.join('recipes').join(distname).check()
+    assert not tmpdir.join('recipes', distname, 'common.py').check()
+    tmpdir.remove()
+
+
 @pytest.mark.randomize(('package', str), ncalls=5)
 def test_generate_recipe_with_missing_distdir(tmpdir, package):
     sys.argv = ['alnair', 'generate', 'recipe', package]
@@ -102,6 +114,17 @@ def test_generate_recipe_with_skip_if_file_exists(tmpdir, package):
     with open(str(tmpdir.join('dist', '%s.py' % package))) as f:
         actual = f.read()
     assert actual == 'testdata'
+    tmpdir.remove()
+
+
+@pytest.mark.randomize(('package', str), ncalls=5)
+def test_generate_recipe_with_dry_run(tmpdir, package):
+    sys.argv = ['alnair', '--dry-run', 'generate', 'recipe', package]
+    tmpdir.mkdir('dist')
+    from alnair import command
+    command.generate.RECIPES_DIR = str(tmpdir)
+    command.main()
+    assert not tmpdir.join('dist', '%s.py' % package).check()
     tmpdir.remove()
 
 
@@ -169,7 +192,8 @@ def test_setup_with_host_not_given(distname, package):
             assert mock_dist.call_count == 1
             assert mock_dist.call_args == mock.call(distname)
             assert mock_inst.setup.call_count == 1
-            assert mock_inst.setup.call_args_list == [mock.call([package])]
+            assert mock_inst.setup.call_args_list == \
+                    [mock.call([package], dry_run=False)]
             assert not called_hosts
         finally:
             _AttributeDict.__setattr__ = orig_setattr
@@ -195,7 +219,8 @@ def test_setup_with_single_host_given(distname, package, host):
             assert mock_dist.call_count == 1
             assert mock_dist.call_args == mock.call(distname)
             assert mock_inst.setup.call_count == 1
-            assert mock_inst.setup.call_args_list == [mock.call([package])]
+            assert mock_inst.setup.call_args_list == \
+                    [mock.call([package], dry_run=False)]
             assert called_hosts == [host]
         finally:
             _AttributeDict.__setattr__ = orig_setattr
@@ -223,7 +248,7 @@ def test_setup_with_multiple_host_given(distname, package, hosts):
             assert mock_dist.call_args == mock.call(distname)
             assert mock_inst.setup.call_count == 2
             assert mock_inst.setup.call_args_list == \
-                    [mock.call([package])] * 2
+                    [mock.call([package], dry_run=False)] * 2
             assert called_hosts == hosts
         finally:
             _AttributeDict.__setattr__ = orig_setattr
@@ -259,7 +284,8 @@ def test_config_with_host_not_given(distname, package):
             assert mock_dist.call_count == 1
             assert mock_dist.call_args == mock.call(distname)
             assert mock_inst.config.call_count == 1
-            assert mock_inst.config.call_args_list == [mock.call([package])]
+            assert mock_inst.config.call_args_list == \
+                    [mock.call([package], dry_run=False)]
             assert not called_hosts
         finally:
             _AttributeDict.__setattr__ = orig_setattr
@@ -285,7 +311,8 @@ def test_config_with_single_host_given(distname, package, host):
             assert mock_dist.call_count == 1
             assert mock_dist.call_args == mock.call(distname)
             assert mock_inst.config.call_count == 1
-            assert mock_inst.config.call_args_list == [mock.call([package])]
+            assert mock_inst.config.call_args_list == \
+                    [mock.call([package], dry_run=False)]
             assert called_hosts == [host]
         finally:
             _AttributeDict.__setattr__ = orig_setattr
@@ -313,7 +340,7 @@ def test_config_with_multiple_host_given(distname, package, hosts):
             assert mock_dist.call_args == mock.call(distname)
             assert mock_inst.config.call_count == 2
             assert mock_inst.config.call_args_list == \
-                    [mock.call([package])] * 2
+                    [mock.call([package], dry_run=False)] * 2
             assert called_hosts == hosts
         finally:
             _AttributeDict.__setattr__ = orig_setattr
