@@ -89,7 +89,7 @@ class Distribution(object):
         command = '%s %s' % (install_command, pkgs)
         self.dry_run = kwargs.get('dry_run', False)
         if self.dry_run:
-            print 'running command: %s' % command
+            self._dryrun_print('running command: %s' % command)
         else:
             fa.sudo(command)
         if not self._within_context:
@@ -116,7 +116,7 @@ class Distribution(object):
         for filename, config in setup.config_all.iteritems():
             sio = StringIO(config._contents.decode('utf-8'))
             if self.dry_run:
-                print 'putting file: %s' % filename
+                self._dryrun_print('putting file: %s' % filename)
             else:
                 fa.put(sio, filename, use_sudo=True)
             self.exec_commands(config)
@@ -140,7 +140,7 @@ class Distribution(object):
         """
         for cmd, func in obj._commands:
             if self.dry_run:
-                print 'running command: %s' % cmd
+                self._dryrun_print('running command: %s' % cmd)
             else:
                 func(cmd)
 
@@ -244,3 +244,6 @@ class Distribution(object):
         if not exc_type:
             self.after_setup()
         return False
+
+    def _dryrun_print(self, msg):
+        print '[host:%s]%s' % (fa.env.host_string, msg)
