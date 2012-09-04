@@ -55,6 +55,7 @@ class Distribution(object):
 
         :param name: distribution name (e.g. 'archlinux')
         :param install_command: install command (e.g. 'pacman -S')
+        :param dry_run: testing for setup process if True
         """
         self.name = name
         self.install_command = install_command
