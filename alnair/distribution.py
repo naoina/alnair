@@ -113,7 +113,9 @@ class Distribution(object):
             self._exec_configs(pkg.setup)
 
     def _exec_configs(self, setup):
-        for filename, config in setup.config_all.iteritems():
+        for (hostname, filename), config in setup.config_all.iteritems():
+            if hostname is not None and fa.env.host_string != hostname:
+                continue
             sio = StringIO(config._contents.decode('utf-8'))
             if self.dry_run:
                 self._dryrun_print('putting file: %s' % filename)

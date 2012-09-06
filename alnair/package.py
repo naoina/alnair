@@ -88,10 +88,13 @@ class Config(Command):
 
 
 class Setup(Command):
-    def __init__(self):
+    def __init__(self, host):
         """Constructor of Setup class
+
+        :param host: instance of :class:`Host`
         """
         super(Setup, self).__init__()
+        self._host = host
         self.after = None
         self._config = {}
 
@@ -101,10 +104,11 @@ class Setup(Command):
         :param filename: filename of config file (e.g. '/etc/nginx/nginx.conf')
         :returns: instance of :class:`Config`
         """
+        key = (self._host.name, filename)
         try:
-            config = self._config[filename]
+            config = self._config[key]
         except KeyError:
-            self._config[filename] = config = Config(filename)
+            self._config[key] = config = Config(filename)
         return config
 
     @property
@@ -114,6 +118,20 @@ class Setup(Command):
         :returns: dict of filename key and instalce of :class:`Config` value
         """
         return self._config
+
+
+class Host(object):
+    def __init__(self):
+        """Constructor of Host class
+        """
+        self.name = None
+        self.current_hostname = None
+
+    def __enter__(self):
+        self.name = self.current_hostname
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.name = None
 
 
 class Package(object):
@@ -130,4 +148,14 @@ class Package(object):
             filename = inspect.currentframe().f_back.f_code.co_filename
             name = os.path.splitext(os.path.basename(filename))[0]
         self.name = (name,) + args
-        self.setup = Setup()
+        self._host = Host()
+        self.setup = Setup(self._host)
+
+    def host(self, hostname):
+        """Set the one time hostname for context manager
+
+        :param hostname: string of target host or IP address
+        :returns: instance of :class:`Host`
+        """
+        self._host.current_hostname = hostname
+        return self._host

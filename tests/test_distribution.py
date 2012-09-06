@@ -227,6 +227,28 @@ class TestDistribution(object):
             dist.config(pkgnames, dry_run=True)
             assert mock_put.call_count == 0
 
+    @pytest.mark.parametrize(('pkgname', 'host', 'expect'),
+        [('pkghost1', None, []),
+         ('pkghost1', 'testhost1', ['testhost_conffile1', 'testhostdata1']),
+         ('pkghost1', 'testhost2', []),
+         ('pkghost2', 'testhost1', ['testhost_conffile1', 'testhostdata1']),
+         ('pkghost2', 'testhost2', ['testhost_conffile2', 'testhostdata2'])])
+    def test_config_with_host(self, pkgname, host, expect):
+        import fabric.api as fa
+        with contextlib.nested(
+                mock.patch('fabric.api.put'),
+                fa.settings(host_string=host)) as (mock_put, dummy):
+            dist = alnair.Distribution(self.TEST_DISTRIBUTION)
+            dist.CONFIG_DIR = self.TEST_FIXTURE_DIR
+            dist.config(pkgname)
+        assert mock_put.call_count == int(bool(expect))
+        if host and expect:
+            sio = mock_put.call_args[0][0]
+            contents = mock_put.call_args[0][1]
+            assert isinstance(sio, StringIO)
+            assert contents == expect[0]
+            assert sio.read() == expect[1]
+
     @pytest.mark.parametrize(('after',), [
         (mock.Mock(spec=alnair.Command),), (None,)])
     @pytest.mark.randomize(('num', int), min_num=1, max_num=20, ncalls=1)
@@ -244,7 +266,7 @@ class TestDistribution(object):
             config._commands = [('confcmd%d' % i, func)]
             setup._commands = [('setupcmd%d' % i, func)]
             pkg.setup = setup
-            pkg.setup.config_all = {'name%d' % i: config}
+            pkg.setup.config_all = {(None, 'name%d' % i): config}
             pkg.setup.after = after
             packages.append(pkg)
             setup_calls.append(mock.call(setup))

@@ -12,6 +12,12 @@ from alnair import Package, Command
 #%(package)s.setup.config('some config file path').contents("""\
 #some config contents
 #""")
+#
+# And you can also a host specific settings.
+#with %(package)s.host('target host or IP address'):
+#    %(package)s.setup.config('config file path').contents("""\
+#configuration contents
+#""")
 
 
 # Optional, please uncomment(remove leading '#') following lines and modify if

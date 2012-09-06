@@ -33,6 +33,7 @@ from alnair.package import (
     Package,
     Setup,
     Command,
+    Host as _Host,
     ); Package; Setup; Command  # pyflakes
 from alnair.distribution import Distribution; Distribution  # pyflakes
 from alnair.exception import (
@@ -41,4 +42,4 @@ from alnair.exception import (
     UndefinedPackageError,
     ); NoSuchDirectoryError; NoSuchFileError; UndefinedPackageError  # pyflakes
 
-setup = Setup()  # for system wide settings
+setup = Setup(_Host())  # for system wide settings
