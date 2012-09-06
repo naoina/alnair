@@ -1,6 +1,13 @@
 Changes
 =======
 
+0.3.2
+-----
+
+- Add --dry-run option to CLI
+- Implement the multiple packages in the single package name
+- Implement a host specific configuration
+
 0.3
 ---
 
